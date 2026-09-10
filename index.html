@@ -327,10 +327,82 @@ table.matrix .mcell{text-align:center;vertical-align:middle}
 .railnote{flex:0 0 100%;font-family:"IBM Plex Mono",monospace;font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3);padding-bottom:2px}
 .figwrap svg{min-width:min(100%,460px)}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
-@media (max-width:760px){
-  .plate-body{padding:18px 16px 20px}
+@media (max-width:900px){
   .opts.two{grid-template-columns:1fr}
   .masthead{align-items:flex-start}
+}
+
+/* ---------- phones ---------- */
+@media (max-width:640px){
+  body{font-size:15px}
+  .wrap{padding:18px 14px 48px}
+  .masthead{gap:14px;padding-bottom:12px}
+  .sub{font-size:14px}
+  .tally{width:100%;display:grid;grid-template-columns:repeat(4,1fr)}
+  .tally div{min-width:0;padding:8px 4px}
+  .tally .n{font-size:18px}
+  .tally .k{font-size:8px;letter-spacing:.06em}
+  .subjects{margin-bottom:12px}
+  .sub-tab{font-size:17px;padding:6px 13px 9px}
+  .decks{gap:6px;margin-bottom:16px}
+  .deck{font-size:12.5px;padding:6px 12px}
+  .rail{gap:6px;margin-bottom:18px}
+  .tg{min-width:150px}
+  .plate-head{padding:9px 14px;gap:6px}
+  .plate-head .bname{width:100%;font-size:12px}
+  .plate-head .tierbadge{margin-left:0}
+  .plate-body{padding:16px 14px 18px}
+  .stem{font-size:16px}
+  .expr{font-size:22px!important}
+  .qnote{font-size:12.5px}
+  /* figures: scroll a little rather than shrink the labels into nothing */
+  .figwrap{padding:10px 4px 6px}
+  .figwrap svg{min-width:420px}
+  svg .alab{font-size:17px}
+  svg .alab.o{font-size:15px}
+  svg .dim text,svg text.dim{font-size:16px}
+  svg .plotlab{font-size:13px}
+  svg .helper-t{font-size:16px}
+  .opts{gap:7px}
+  .opt{padding:10px 12px;font-size:14.5px}
+  .opt .kx{width:22px;height:22px;flex-basis:22px}
+  .opts.three{max-width:100%}
+  .actions{gap:8px;margin-top:20px;padding-top:14px}
+  button.btn{padding:11px 16px;flex:1 1 auto;font-size:14px}
+  .kbd{display:none}
+  .numrow{gap:8px}
+  input[type="text"].numin{width:118px;font-size:19px;padding:10px}
+  .inlinewrap{font-size:15px;line-height:2.7}
+  .partblk{padding-left:12px}
+  .partq{font-size:15px}
+  table.matrix .rlab{font-size:12.5px;max-width:20ch;padding:8px 8px}
+  table.matrix .mcol{min-width:72px;font-size:9px;padding:8px 4px}
+  th,td{padding:8px 10px;font-size:12.5px}
+  .passage-head{padding:12px 16px 10px}
+  .passage-head h2{font-size:20px}
+  .passage-body{max-height:300px;padding:4px 16px 14px;font-size:16px}
+  .passage-body p{padding-left:24px}
+  .passage-body p .pn{width:18px;padding-right:6px}
+  .passageq{font-size:15.5px;padding:11px 13px}
+  .daygrid{grid-template-columns:1fr}
+  .refgrid{grid-template-columns:1fr;gap:16px}
+  .verdict{padding:13px 15px}
+  .steps li{padding-left:30px;font-size:14px}
+  .ledger h2{font-size:20px}
+  footer{gap:10px;font-size:12px}
+  h1{font-size:38px}
+}
+
+/* ---------- touch targets ---------- */
+@media (pointer:coarse){
+  .tcell{width:30px;height:30px}
+  .ichip{padding:10px 15px;font-size:15px}
+  .chip{padding:14px 18px}
+  .tog{padding:11px 16px}
+  .opt{min-height:46px}
+  .deck{min-height:38px}
+  button.btn{min-height:46px}
+  .passage-toggle{padding:12px 22px}
 }
 </style>
 </head>
