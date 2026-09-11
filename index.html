@@ -541,6 +541,7 @@ function lineGeom(o){
   const x=k=>padL+((k-o.k0)/n)*(W-padL-padR);
   return {W,padL,padR,n,x};
 }
+const svgSafe=t=>String(t).replace(/<[^>]*>/g,'');   // never let markup into an SVG text node
 function numberLine(o){
   // o: {D,k0,k1,labelEvery(ticks in 1/D units),point:{k,open},ray:{k,dir,closed},height}
   const g=lineGeom(o), H=o.height||96, y=o.axisY||54;
@@ -556,7 +557,7 @@ function numberLine(o){
       s+='<text class="alab" x="'+X+'" y="'+(y+26)+'" text-anchor="middle">'+(f.d===1?num(f.n):decStr(f))+'</text>';
     }
   }
-  if(o.sublabel) s+='<text class="alab o" x="'+(g.W/2)+'" y="'+(H-4)+'" text-anchor="middle">'+o.sublabel+'</text>';
+  if(o.sublabel) s+='<text class="alab o" x="'+(g.W/2)+'" y="'+(H-4)+'" text-anchor="middle">'+svgSafe(o.sublabel)+'</text>';
   if(o.ray){
     const X=g.x(o.ray.k), end=o.ray.dir==='right'?g.W-20:20;
     s+='<line class="ray" x1="'+X+'" y1="'+y+'" x2="'+(end+(o.ray.dir==='right'?-9:9))+'" y2="'+y+'"/>';
@@ -567,7 +568,7 @@ function numberLine(o){
   if(o.point) s+='<circle class="pt'+(o.point.open?' open':'')+'" cx="'+g.x(o.point.k)+'" cy="'+y+'" r="6.5"/>';
   if(o.hit) for(let k=o.k0;k<=o.k1;k++){
     const X=g.x(k), w=Math.max((g.W-g.padL-g.padR)/g.n,22);
-    s+='<rect class="hit" data-k="'+k+'" x="'+(X-w/2)+'" y="'+(y-26)+'" width="'+w+'" height="52" rx="2"/>';
+    s+='<rect class="hit" data-k="'+k+'" x="'+(X-w/2)+'" y="0" width="'+w+'" height="'+H+'" rx="2"/>';
   }
   return s+'</svg>';
 }
@@ -601,7 +602,7 @@ function boxPlot(o){ // {min,q1,med,q3,max,axMin,axMax,step,labelEvery,title,hei
   const W=700,padL=40,padR=40,H=o.height||150,ay=H-34,by=o.by||52,bh=40;
   const x=v=>padL+((v-o.axMin)/(o.axMax-o.axMin))*(W-padL-padR);
   let s='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="box plot">';
-  if(o.title)s+='<text class="plotlab" x="'+padL+'" y="16">'+o.title+'</text>';
+  if(o.title)s+='<text class="plotlab" x="'+padL+'" y="16">'+svgSafe(o.title)+'</text>';
   const yc=by+bh/2;
   s+='<line class="whisk" x1="'+x(o.min)+'" y1="'+yc+'" x2="'+x(o.q1)+'" y2="'+yc+'"/>';
   s+='<line class="whisk" x1="'+x(o.q3)+'" y1="'+yc+'" x2="'+x(o.max)+'" y2="'+yc+'"/>';
@@ -663,7 +664,7 @@ function g_NSO11(t){
     return {
       stem:'Plot <strong>'+fmtAny(f,form)+'</strong> on the number line. Click the tick mark where it belongs.',
       note:'Only the whole numbers are labelled. Count the small ticks between them.',
-      figure:numberLine({D,k0:lo*D,k1:hi*D,labelEvery:D,hit:true,sublabel:'each small tick = '+fracHTML(1,D)}),
+      figure:numberLine({D,k0:lo*D,k1:hi*D,labelEvery:D,hit:true,sublabel:'each small tick = 1/'+D}),
       input:{kind:'plot',D,k0:lo*D,k1:hi*D,labelEvery:D,answer:k},
       hint:'Between each pair of whole numbers there are '+D+' equal spaces, so one small tick is '+fracHTML(1,D)+'. Count from the whole number nearest to zero — and for a negative, count <em>left</em>.',
       solution:[
@@ -957,7 +958,7 @@ function ineqSVG(g,op,a,hit){
   }
   if(hit)for(let k=k0;k<=k1;k++){
     const X=geom.x(k),w=Math.max((geom.W-68)/(k1-k0),24);
-    s+='<rect class="hit" data-k="'+k+'" x="'+(X-w/2)+'" y="'+(y-26)+'" width="'+w+'" height="52" rx="2"/>';
+    s+='<rect class="hit" data-k="'+k+'" x="'+(X-w/2)+'" y="0" width="'+w+'" height="96" rx="2"/>';
   }
   return s+'</svg>';
 }
@@ -2082,7 +2083,7 @@ function coordGrid(o){
   (o.dashed||[]).forEach(g=>{ s+='<line class="helper" x1="'+X(g[0])+'" y1="'+Y(g[1])+'" x2="'+X(g[2])+'" y2="'+Y(g[3])+'"/>'; });
   (o.points||[]).forEach(p=>{
     s+='<circle cx="'+X(p.x)+'" cy="'+Y(p.y)+'" r="5.5" fill="'+(p.c||'var(--accent)')+'" stroke="var(--paper-2)" stroke-width="1.5"/>';
-    if(p.label)s+='<text class="alab" x="'+(X(p.x)+9)+'" y="'+(Y(p.y)-8)+'" font-weight="600">'+p.label+'</text>';
+    if(p.label)s+='<text class="alab" x="'+(X(p.x)+9)+'" y="'+(Y(p.y)-8)+'" font-weight="600">'+svgSafe(p.label)+'</text>';
   });
   if(o.hit)for(let a=-R;a<=R;a++)for(let b=-R;b<=R;b++)
     s+='<rect class="hit" data-x="'+a+'" data-y="'+b+'" x="'+(X(a)-S/2)+'" y="'+(Y(b)-S/2)+'" width="'+S+'" height="'+S+'" rx="2"/>';
@@ -3775,6 +3776,21 @@ function deckBenchmarks(){
    NAVIGATION RENDER
    ============================================================ */
 function el(id){return document.getElementById(id);}
+/* A drawing's labels sit outside the shape, so a fixed viewBox clips them.
+   After render, widen the viewBox to the true bounds of everything drawn. */
+function fitSVG(svg){
+  try{
+    const b=svg.getBBox(); if(!b||!isFinite(b.width))return;
+    const vb=svg.viewBox.baseVal, pad=7;
+    const x=Math.min(vb.x, b.x-pad), y=Math.min(vb.y, b.y-pad);
+    const x2=Math.max(vb.x+vb.width, b.x+b.width+pad), y2=Math.max(vb.y+vb.height, b.y+b.height+pad);
+    svg.setAttribute('viewBox',x+' '+y+' '+(x2-x)+' '+(y2-y));
+  }catch(e){}
+}
+function setFigure(html){
+  el('figure').innerHTML=html?'<div class="figwrap" tabindex="0" role="region" aria-label="Figure">'+html+'</div>':'';
+  el('figure').querySelectorAll('svg').forEach(fitSVG);
+}
 function renderNav(){
   let h='<div class="subjects" role="tablist">';
   REG.forEach(s=>{ h+='<button class="sub-tab" role="tab" data-subject="'+s.id+'" aria-selected="'+(s.id===subject)+'">'+s.name+'</button>'; });
@@ -3983,7 +3999,7 @@ function renderItem(){
     :K==='plot'||K==='point'||K==='ineq'?'<b>←</b><b>→</b> move &middot; ':'')+
     (cur.hint?'<b>H</b> hint &middot; ':'')+'<b>Enter</b> check';
   el('stem').innerHTML=cur.stem+(cur.note?'<div class="qnote">'+cur.note+'</div>':'');
-  el('figure').innerHTML=cur.figure?'<div class="figwrap" tabindex="0" role="region" aria-label="Figure">'+cur.figure+'</div>':'';
+  setFigure(cur.figure||'');
   const I=cur.input; let h='';
   const shortOpts=a=>a.every(o=>o.replace(/<[^>]*>/g,'').length<26);
   if(I.kind==='mc'){ h='<div class="opts'+(shortOpts(I.options)?' two':'')+'" role="radiogroup" aria-labelledby="stem">'+
@@ -4075,12 +4091,25 @@ function wire(){
     el('seqLine').textContent=orderPick.length===I.chips.length?'All placed — press Check.':'Click in order, least to greatest. ('+orderPick.length+' of '+I.chips.length+')';
   });
   if(I.kind==='plot'||I.kind==='point'||I.kind==='ineq'){
-    el('figure').querySelectorAll('.hit').forEach(r=>r.onclick=()=>{
-      if(answered)return;
+    const take=r=>{
+      if(answered||!r)return;
       if(I.kind==='plot'){ plotPick=+r.dataset.k; redrawLine(); }
       else if(I.kind==='point'){ pointPick={x:+r.dataset.x,y:+r.dataset.y}; redrawGrid(); }
       else { ineqPick.k=+r.dataset.k; redrawIneq(); }
-    });
+    };
+    const hits=[...el('figure').querySelectorAll('.hit')];
+    hits.forEach(r=>r.onclick=e=>{ e.stopPropagation(); take(r); });
+    // clicking near a target counts: snap to the closest one anywhere in the figure
+    const wrap=el('figure').querySelector('.figwrap');
+    if(wrap)wrap.onclick=e=>{
+      if(answered||!hits.length)return;
+      let best=null,bd=Infinity;
+      hits.forEach(r=>{ const b=r.getBoundingClientRect();
+        const dx=Math.max(b.left-e.clientX,0,e.clientX-b.right);
+        const dy=Math.max(b.top-e.clientY,0,e.clientY-b.bottom);
+        const d=dx*dx+dy*dy; if(d<bd){bd=d;best=r;} });
+      take(best);
+    };
   }
   if(I.kind==='ineq')el('answer').querySelectorAll('.tog').forEach(b=>b.onclick=()=>{
     if(answered)return; const t=b.dataset.t;
@@ -4089,14 +4118,14 @@ function wire(){
     redrawIneq(); });
 }
 function redrawLine(){ const I=cur.input;
-  el('figure').innerHTML='<div class="figwrap" tabindex="0" role="region" aria-label="Figure">'+numberLine({D:I.D,k0:I.k0,k1:I.k1,labelEvery:I.labelEvery,hit:!answered,
-    point:plotPick!==null?{k:plotPick}:null,sublabel:'each small tick = '+fracHTML(1,I.D)})+'</div>'; wire();
+  setFigure(numberLine({D:I.D,k0:I.k0,k1:I.k1,labelEvery:I.labelEvery,hit:!answered,
+    point:plotPick!==null?{k:plotPick}:null,sublabel:'each small tick = 1/'+I.D})); wire();
   const sl=el('seqLine'); if(sl&&plotPick!==null)sl.innerHTML='Marked at '+fmtFrac(F(plotPick,I.D))+'. Press Check, or click again to move it.'; }
-function redrawGrid(){ el('figure').innerHTML='<div class="figwrap" tabindex="0" role="region" aria-label="Figure">'+coordGrid({hit:!answered,points:pointPick?[{x:pointPick.x,y:pointPick.y}]:[]})+'</div>'; wire();
+function redrawGrid(){ setFigure(coordGrid({hit:!answered,points:pointPick?[{x:pointPick.x,y:pointPick.y}]:[]})); wire();
   const sl=el('seqLine'); if(sl&&pointPick)sl.innerHTML='Placed at <span class="mn">('+num(pointPick.x)+', '+num(pointPick.y)+')</span>. Press Check, or click again to move it.'; }
 function redrawIneq(){ const g=cur.input.g;
   const op=ineqPick.k===null?null:(ineqPick.dir==='right'?(ineqPick.closed?'ge':'gt'):(ineqPick.closed?'le':'lt'));
-  el('figure').innerHTML='<div class="figwrap" tabindex="0" role="region" aria-label="Figure">'+ineqSVG(g,op,ineqPick.k===null?g.a:ineqPick.k*g.step,!answered)+'</div>';
+  setFigure(ineqSVG(g,op,ineqPick.k===null?g.a:ineqPick.k*g.step,!answered));
   wire();
   const s=el('seqLine'); if(s)s.innerHTML=ineqPick.k===null?'Click the number line above to set the boundary.':'Boundary at <span class="mn">'+num(ineqPick.k*g.step)+'</span>. Adjust the circle and arrow, then press Check.'; }
 
@@ -4207,12 +4236,12 @@ function check(){
     if(b.dataset.c===I.answer)b.classList.add('right'); else if(b.dataset.c===cmpPick)b.classList.add('wrong');});
   if(I.kind==='order'){ el('answer').querySelectorAll('.chip').forEach(b=>{b.disabled=true;
     const id=+b.dataset.id; b.classList.add(I.answer.indexOf(id)===orderPick.indexOf(id)?'right':'wrong'); }); }
-  if(I.kind==='plot'){ el('figure').innerHTML='<div class="figwrap" tabindex="0" role="region" aria-label="Figure">'+numberLine({D:I.D,k0:I.k0,k1:I.k1,labelEvery:I.labelEvery,
+  if(I.kind==='plot'){ setFigure(numberLine({D:I.D,k0:I.k0,k1:I.k1,labelEvery:I.labelEvery,
       point:{k:I.answer},wrong:(!ok&&plotPick!==null&&plotPick!==I.answer)?{k:plotPick}:null,
-      sublabel:ok?'correct position shown':'blue = correct'+(plotPick!==null&&plotPick!==I.answer?', red = where you clicked':'')})+'</div>'; }
-  if(I.kind==='point'){ el('figure').innerHTML='<div class="figwrap" tabindex="0" role="region" aria-label="Figure">'+coordGrid({points:[{x:I.answer.x,y:I.answer.y,label:'('+num(I.answer.x)+', '+num(I.answer.y)+')'}].concat(
-      (!ok&&pointPick)?[{x:pointPick.x,y:pointPick.y,label:'yours',c:'var(--bad)'}]:[])})+'</div>'; }
-  if(I.kind==='ineq'){ el('figure').innerHTML='<div class="figwrap" tabindex="0" role="region" aria-label="Figure">'+ineqSVG(I.g,I.answer.op,I.answer.a,false)+'</div>';
+      sublabel:ok?'correct position shown':'blue = correct'+(plotPick!==null&&plotPick!==I.answer?', red = where you clicked':'')})); }
+  if(I.kind==='point'){ setFigure(coordGrid({points:[{x:I.answer.x,y:I.answer.y,label:'('+num(I.answer.x)+', '+num(I.answer.y)+')'}].concat(
+      (!ok&&pointPick)?[{x:pointPick.x,y:pointPick.y,label:'yours',c:'var(--bad)'}]:[])})); }
+  if(I.kind==='ineq'){ setFigure(ineqSVG(I.g,I.answer.op,I.answer.a,false));
     const want=I.answer.op;
     el('answer').querySelectorAll('.tog').forEach(b=>{ b.disabled=true;
       const on=b.dataset.t==='closed' ? (b.dataset.v==='1')===(want==='ge'||want==='le')
