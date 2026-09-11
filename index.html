@@ -176,6 +176,25 @@ main.reading>.passage{margin-bottom:14px}
 .passage-body{-webkit-mask-image:linear-gradient(to bottom,#000 calc(100% - 26px),transparent);
   mask-image:linear-gradient(to bottom,#000 calc(100% - 26px),transparent)}
 .figwrap{width:fit-content;max-width:100%;margin-left:auto;margin-right:auto}
+svg .piece{stroke:var(--ink);stroke-width:var(--sw-obj);stroke-linejoin:round}
+svg .piece.pc0{fill:var(--accent);fill-opacity:.30}
+svg .piece.pc1{fill:var(--bronze);fill-opacity:.30}
+svg .piece.pc2{fill:var(--good);fill-opacity:.30}
+svg .piece.cutaway{fill:var(--paper-2);stroke-dasharray:6 4;stroke:var(--bad)}
+svg .pclab{fill:var(--ink);font-family:"IBM Plex Mono",monospace;font-size:12px;
+  paint-order:stroke;stroke:var(--paper-2);stroke-width:4;stroke-linejoin:round}
+svg .bpreg{fill:transparent;cursor:pointer}
+svg .bpreg:hover{fill:var(--accent);fill-opacity:.15}
+svg .bpreg.on{fill:var(--accent);fill-opacity:.24}
+svg .bpreg.pt5.on{fill:var(--bronze);fill-opacity:.4}
+.figcue{display:block;margin:8px auto 0;cursor:pointer;font:inherit;font-family:"IBM Plex Mono",monospace;
+  font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);
+  background:var(--accent-soft);border:1px solid var(--accent-line);border-radius:var(--r);padding:7px 15px}
+.figcue:hover{background:var(--accent);color:var(--paper);border-color:var(--accent)}
+.figcap{margin:9px auto 0;max-width:62ch;text-align:center;font-size:14px;color:var(--ink-2);min-height:1.4em}
+.figcap strong{color:var(--accent)}
+.figcue-hint{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink-3)}
 input[type="text"].numin{width:168px;font-size:23px}
 .verdict{animation:vin .22s ease-out both}
 @keyframes vin{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:none}}
@@ -598,6 +617,16 @@ function fig(figW,figH,pad){
   return {s,W,H,X:u=>p.l+u*s,Y:v=>p.t+(figH-v)*s,
     open:()=>'<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="geometric figure">',close:()=>'</svg>'};
 }
+function cutSVG(g,pieces){
+  let out=g.open();
+  pieces.forEach((pc,i)=>{
+    const cx=pc.pts.reduce((a,q)=>a+q[0],0)/pc.pts.length, cy=pc.pts.reduce((a,q)=>a+q[1],0)/pc.pts.length;
+    const sh=pc.pts.map(q=>[q[0]+(cx-q[0])*0.05, q[1]+(cy-q[1])*0.05]);
+    out+='<polygon class="piece pc'+(i%3)+(pc.cut?' cutaway':'')+'" points="'+sh.map(q=>g.X(q[0])+','+g.Y(q[1])).join(' ')+'"/>';
+    out+='<text class="pclab" x="'+g.X(cx)+'" y="'+(g.Y(cy)+4)+'" text-anchor="middle">'+pc.lab+'</text>';
+  });
+  return out+g.close();
+}
 function poly(g,pts,cls){ return '<polygon class="'+(cls||'face')+'" points="'+pts.map(p=>g.X(p[0])+','+g.Y(p[1])).join(' ')+'"/>'; }
 function dimH(g,u1,u2,v,off,label){ // off>0 => below
   const x1=g.X(u1),x2=g.X(u2),y0=g.Y(v),y=y0+off;
@@ -628,6 +657,15 @@ function boxPlot(o){ // {min,q1,med,q3,max,axMin,axMax,step,labelEvery,title,hei
   s+='<rect class="box" x="'+x(o.q1)+'" y="'+by+'" width="'+(x(o.q3)-x(o.q1))+'" height="'+bh+'"/>';
   s+='<line class="med" x1="'+x(o.med)+'" y1="'+by+'" x2="'+x(o.med)+'" y2="'+(by+bh)+'"/>';
   s+='<line class="axis" x1="'+(padL-16)+'" y1="'+ay+'" x2="'+(W-padR+16)+'" y2="'+ay+'"/>';
+  if(o.explore){
+    const R=[['Lower whisker','the lowest quarter of the values',o.min,o.q1],
+             ['Lower half of the box','from Q1 up to the median &mdash; a quarter of the values',o.q1,o.med],
+             ['Upper half of the box','from the median up to Q3 &mdash; a quarter of the values',o.med,o.q3],
+             ['Upper whisker','the highest quarter of the values',o.q3,o.max]];
+    R.forEach(r=>{ if(x(r[3])>=x(r[2]))s+='<rect class="bpreg" data-nm="'+r[0]+'" data-ds="'+r[1]+'" x="'+x(r[2])+'" y="'+(by-6)+'" width="'+Math.max(x(r[3])-x(r[2]),6)+'" height="'+(bh+12)+'"/>'; });
+    [['Minimum',o.min],['Lower quartile (Q1)',o.q1],['Median',o.med],['Upper quartile (Q3)',o.q3],['Maximum',o.max]].forEach(m=>{
+      s+='<rect class="bpreg pt5" data-nm="'+m[0]+'" data-ds="read its value straight down on the scale" x="'+(x(m[1])-7)+'" y="'+(by-10)+'" width="14" height="'+(bh+20)+'"/>'; });
+  }
   for(let v=o.axMin;v<=o.axMax+1e-9;v+=o.step){
     const X=x(v), major=Math.round((v-o.axMin)/o.step)%o.labelEvery===0;
     s+='<line class="'+(major?'tick':'tickm')+'" x1="'+X+'" y1="'+ay+'" x2="'+X+'" y2="'+(ay+(major?8:4))+'"/>';
@@ -1067,7 +1105,10 @@ function figLshape(t){
   s+=dimV(g,0,H-h,W,32,(H-h)+' '+UN);
   s+=dimH(g,0,W-w,H,-16,(W-w)+' '+UN);
   s+=g.close();
-  return {svg:s,area:W*H-w*h,W,H,w,h,
+  const cutS=cutSVG(g,[
+    {pts:[[0,0],[W-w,0],[W-w,H],[0,H]],lab:(W-w)+' × '+H},
+    {pts:[[W-w,0],[W,0],[W,H-h],[W-w,H-h]],lab:w+' × '+(H-h)}]);
+  return {svg:s,svgCut:cutS,area:W*H-w*h,W,H,w,h,
     missing:{value:w,mark:'the top-right horizontal edge',
       steps:['The full bottom edge is <span class="mn">'+W+'</span> and the top edge is only <span class="mn">'+(W-w)+'</span>.',
              'The missing horizontal piece closes that gap: <span class="mn">'+W+' &minus; '+(W-w)+' = '+w+'</span>.',
@@ -1090,7 +1131,10 @@ function figHouse(t){
   s+=dimH(g,0,W,0,30,W+' '+UN);
   s+=dimV(g,0,H,0,-28,H+' '+UN);
   s+=g.close();
-  return {svg:s,area:W*H+W*tt/2,
+  const cutS=cutSVG(g,[
+    {pts:[[0,0],[W,0],[W,H],[0,H]],lab:'rectangle '+W+' × '+H},
+    {pts:[[0,H],[W,H],[W/2,H+tt]],lab:'triangle base '+W+', height '+tt}]);
+  return {svg:s,svgCut:cutS,area:W*H+W*tt/2,
     steps:['Cut it into two familiar shapes: a rectangle underneath and a triangle on top.',
            'Rectangle: <span class="mn">'+W+' × '+H+' = '+(W*H)+'</span> '+U2(UN)+'.',
            'Triangle: base <span class="mn">'+W+'</span>, height <span class="mn">'+tt+'</span>, so <span class="mn">½ × '+W+' × '+tt+' = '+(W*tt/2)+'</span> '+U2(UN)+'. Total: <span class="mn">'+(W*H)+' + '+(W*tt/2)+' = '+(W*H+W*tt/2)+'</span> '+U2(UN)+'.'],
@@ -1108,7 +1152,10 @@ function figFrame(t){
   s+=dimV(g,0,H,0,-28,H+' '+UN);
   s+=dimH(g,0,m,H,-16,m+' '+UN);
   s+=g.close();
-  return {svg:s,area:W*H-w*h,
+  const cutS=cutSVG(g,[
+    {pts:[[0,0],[W,0],[W,H],[0,H]],lab:'whole '+W+' × '+H},
+    {pts:[[m,m],[m+w,m],[m+w,m+h],[m,m+h]],lab:'take away '+w+' × '+h,cut:1}]);
+  return {svg:s,svgCut:cutS,area:W*H-w*h,
     steps:['The shaded walkway is the big rectangle with the inner rectangle removed.',
            'Outer: <span class="mn">'+W+' × '+H+' = '+(W*H)+'</span> '+U2(UN)+'.',
            'The border is <span class="mn">'+m+'</span> wide on <strong>both</strong> sides, so the inner pool is <span class="mn">'+W+' &minus; 2('+m+') = '+w+'</span> by <span class="mn">'+H+' &minus; 2('+m+') = '+h+'</span>, area <span class="mn">'+(w*h)+'</span>. Walkway: <span class="mn">'+(W*H)+' &minus; '+(w*h)+' = '+(W*H-w*h)+'</span> '+U2(UN)+'.'],
@@ -1130,7 +1177,11 @@ function figTrap(t){
   s+=dimH(g,o,o+b2,h,-16,b2+' '+UN);
   s+=g.close();
   const rr=b1-o-b2;
-  return {svg:s,area:(b1+b2)*h/2,
+  const cutS=cutSVG(g,[
+    {pts:[[0,0],[o,0],[o,h]],lab:'base '+o+', height '+h},
+    {pts:[[o,0],[o+b2,0],[o+b2,h],[o,h]],lab:b2+' × '+h},
+    {pts:[[o+b2,0],[b1,0],[o+b2,h]],lab:'base '+rr+', height '+h}]);
+  return {svg:s,svgCut:cutS,area:(b1+b2)*h/2,
     steps:['Cut it with two vertical slices, one down from each top corner. That leaves a triangle on the left, a rectangle in the middle and a triangle on the right &mdash; three shapes you already have formulas for.',
            'Left triangle: base <span class="mn">'+o+'</span>, height <span class="mn">'+h+'</span> → <span class="mn">½ × '+o+' × '+h+' = '+(o*h/2)+'</span>. Middle rectangle: <span class="mn">'+b2+' × '+h+' = '+(b2*h)+'</span>. Right triangle: base <span class="mn">'+b1+' &minus; '+o+' &minus; '+b2+' = '+rr+'</span> → <span class="mn">½ × '+rr+' × '+h+' = '+(rr*h/2)+'</span>.',
            'Add the three pieces: <span class="mn">'+(o*h/2)+' + '+(b2*h)+' + '+(rr*h/2)+' = '+((b1+b2)*h/2)+'</span> '+U2(UN)+'.'],
@@ -1151,9 +1202,13 @@ function figPara(t){
   s+='<path class="helper" stroke-dasharray="0" d="M'+(g.X(o))+' '+(g.Y(0)-11)+' h11 v11"/>';
   s+='<text class="helper-t" x="'+(g.X(o)+8)+'" y="'+(g.Y(h/2)+4)+'">'+h+' '+UN+'</text>';
   s+=dimH(g,0,b,0,30,b+' '+UN);
-  s+='<text class="dim" fill="var(--ink-2)" font-family="IBM Plex Mono" font-size="12" x="'+((g.X(b)+g.X(b+o))/2+12)+'" y="'+((g.Y(0)+g.Y(h))/2)+'">'+sl+' '+UN+'</text>';
+  s+='<text class="dim" x="'+((g.X(b)+g.X(b+o))/2+12)+'" y="'+((g.Y(0)+g.Y(h))/2)+'">'+sl+' '+UN+'</text>';
   s+=g.close();
-  return {svg:s,area:b*h,
+  const cutS=b>o?cutSVG(g,[
+    {pts:[[0,0],[o,0],[o,h]],lab:'slides across →'},
+    {pts:[[o,0],[b,0],[b,h],[o,h]],lab:(b-o)+' × '+h},
+    {pts:[[b,0],[b+o,h],[b,h]],lab:'← same triangle'}]):null;
+  return {svg:s,svgCut:cutS,area:b*h,
     steps:['A parallelogram is a rectangle with a triangle slid from one end to the other, so its area is <span class="mn">base × height</span>.',
            'The <strong>height</strong> is the dashed perpendicular segment, <span class="mn">'+h+'</span> — not the slanted side <span class="mn">'+sl+'</span>.',
            '<span class="mn">'+b+' × '+h+' = '+(b*h)+'</span> '+U2(UN)+'.'],
@@ -1173,7 +1228,10 @@ function figT(t){
   sv+=dimV(g,0,h1,L,-26,h1+' '+UN);
   sv+=dimH(g,L,L+s2,0,30,s2+' '+UN);
   sv+=g.close();
-  return {svg:sv,area:s2*h1+W*h2,
+  const cutS=cutSVG(g,[
+    {pts:[[0,h1],[W,h1],[W,h1+h2],[0,h1+h2]],lab:'bar '+W+' × '+h2},
+    {pts:[[L,0],[L+s2,0],[L+s2,h1],[L,h1]],lab:'stem '+s2+' × '+h1}]);
+  return {svg:sv,svgCut:cutS,area:s2*h1+W*h2,
     steps:['Slice it horizontally into two rectangles: the wide bar on top and the stem below.',
            'Top bar: <span class="mn">'+W+' × '+h2+' = '+(W*h2)+'</span> '+U2(UN)+'.',
            'Stem: <span class="mn">'+s2+' × '+h1+' = '+(s2*h1)+'</span> '+U2(UN)+'. Total: <span class="mn">'+(W*h2)+' + '+(s2*h1)+' = '+(W*h2+s2*h1)+'</span> '+U2(UN)+'.'],
@@ -1207,7 +1265,7 @@ function g_GR22(t){
   }
   return {stem:'Find the area of '+PK(CTX5)+' shaped like the figure below.',
     note:'Break it into rectangles and triangles, or start from a bigger rectangle and subtract.',
-    figure:f.svg,
+    figure:f.svg, figCut:f.svgCut,
     input:{kind:'num',answer:f.area,unit:U2(UN),traps:f.traps},
     hint:'There is more than one right way to cut it. Whatever you choose, make sure every piece is counted exactly once.',
     solution:f.steps};
@@ -1251,7 +1309,7 @@ function g_DP13(t){
   const iqr=d.q3-d.q1, rng=d.max-d.min;
   const modes=t===1?['read','read','range','iqr']:t===2?['read','iqr','range','pct','count']:['pct','count','whisk','compare','iqr'];
   const mode=PK(modes);
-  const plot=boxPlot(Object.assign({},d,{title:c.t+' (n = '+c.n+')'}));
+  const plot=boxPlot(Object.assign({},d,{title:c.t+' (n = '+c.n+')',explore:true}));
 
   if(mode==='read'){
     const which=PK([['the minimum',d.min,'the left end of the left whisker'],['the lower quartile (Q1)',d.q1,'the left edge of the box'],
@@ -3811,9 +3869,37 @@ function fitSVG(svg){
     svg.style.minWidth=Math.min(430,Math.round(W))+'px';   // wide drawings scroll rather than shrink away
   }catch(e){}
 }
+let figCutOn=false;
+function figureExtras(){
+  const fig=el('figure'), wrap=fig.querySelector('.figwrap'); if(!wrap)return;
+  // a composite shape can cut itself apart
+  if(cur&&cur.figCut){
+    let cue=fig.querySelector('.figcue');
+    if(!cue){ cue=document.createElement('button'); cue.className='figcue'; cue.type='button'; fig.appendChild(cue); }
+    cue.innerHTML=figCutOn?'&#9632; Put it back together':'&#9670; Cut it into pieces';
+    const toggle=()=>{ figCutOn=!figCutOn;
+      setFigure(figCutOn?cur.figCut:cur.figure);
+      const c=el('figure').querySelector('.figcue'); if(c)c.focus({preventScroll:true}); };
+    cue.onclick=e=>{ e.stopPropagation(); toggle(); };
+    wrap.style.cursor='pointer';
+    wrap.onclick=toggle;
+  }
+  // a box plot can name its own parts
+  const regs=[...fig.querySelectorAll('.bpreg')];
+  if(regs.length){
+    let cap=fig.querySelector('.figcap');
+    if(!cap){ cap=document.createElement('div'); cap.className='figcap'; fig.appendChild(cap); }
+    cap.innerHTML='<span class="figcue-hint">Tap any part of the plot to find out what it is.</span>';
+    regs.forEach(r=>r.onclick=e=>{ e.stopPropagation();
+      regs.forEach(o=>o.classList.remove('on')); r.classList.add('on');
+      cap.innerHTML='<strong>'+r.dataset.nm+'</strong> &mdash; '+r.dataset.ds+'.';
+    });
+  }
+}
 function setFigure(html){
   el('figure').innerHTML=html?'<div class="figwrap" tabindex="0" role="region" aria-label="Figure">'+html+'</div>':'';
   el('figure').querySelectorAll('svg').forEach(fitSVG);
+  figureExtras();
 }
 function renderNav(){
   let h='<div class="subjects" role="tablist">';
@@ -4024,6 +4110,7 @@ function renderItem(){
     :K==='plot'||K==='point'||K==='ineq'?'<b>←</b><b>→</b> move &middot; ':'')+
     (cur.hint?'<b>H</b> hint &middot; ':'')+'<b>Enter</b> check';
   el('stem').innerHTML=cur.stem+(cur.note?'<div class="qnote">'+cur.note+'</div>':'');
+  figCutOn=false;
   setFigure(cur.figure||'');
   const I=cur.input; let h='';
   const shortOpts=a=>a.every(o=>o.replace(/<[^>]*>/g,'').length<26);
