@@ -2793,7 +2793,9 @@ function elaVocab(mode,t){
 
   if(mode==='affix'){
     const i=vpool('affix',AFFIX.length), a=AFFIX[i];
-    const others=SH(AFFIX.filter(x=>x[2]===a[2]&&x!==a)).slice(0,3);
+    const twins={'-archy':'-cracy','-cracy':'-archy','-ify':'-ize','-ize':'-ify','anti-':'counter-','counter-':'anti-',
+                 'sub-':'infra-','pre-':'ante-','-ment':'-tion','-tion':'-ment'};
+    const others=SH(AFFIX.filter(x=>x[2]===a[2]&&x!==a&&x[0]!==twins[a[0]]&&x[1]!==a[1])).slice(0,3);
     const opts=SH([{o:a[1],ok:true},...others.map(o=>({o:o[1],ok:false}))]);
     return {stem:'What does the '+a[2]+' <strong>'+a[0]+'</strong> mean?',
       input:{kind:'mc',options:opts.map(o=>o.o),correct:opts.findIndex(o=>o.ok)},
@@ -2807,16 +2809,18 @@ function elaVocab(mode,t){
   if(mode!=='conn')return elaVocab('context',t);
   const c=CONNOTATION[vpool('conn',CONNOTATION.length)];
   const neg=c.pair.find(x=>x!==c.pos);
+  const usedPos=Math.random()<.5;                 // sometimes the unflattering word is the one chosen
+  const used=usedPos?c.pos:neg, other=usedPos?neg:c.pos;
   const opts=SH([
-    {o:'It suggests the writer <strong>approves</strong> of the quality.',ok:true},
-    {o:'It suggests the writer <strong>disapproves</strong> of the quality.',ok:false},
+    {o:'It suggests the writer <strong>approves</strong> of the quality.',ok:usedPos},
+    {o:'It suggests the writer <strong>disapproves</strong> of the quality.',ok:!usedPos},
     {o:'It states a fact about the person with no judgement attached.',ok:false},
-    {o:'It means something factually different from <em>'+neg+'</em>.',ok:false}]);
-  return {stem:'A writer describes someone as <strong><em>'+c.pos+'</em></strong> rather than <em>'+neg+'</em>. The two words have nearly the same dictionary meaning.<br><br><strong>What does that choice tell you?</strong>',
+    {o:'It shows the writer is unsure which of the two words fits better.',ok:false}]);
+  return {stem:'A writer describes someone as <strong><em>'+used+'</em></strong> rather than <em>'+other+'</em>. The two words have nearly the same dictionary meaning.<br><br><strong>What does that choice tell you?</strong>',
     input:{kind:'mc',options:opts.map(o=>o.o),correct:opts.findIndex(o=>o.ok)},
     hint:'Denotation is what a word <em>means</em>. Connotation is how it makes the reader <em>feel</em> about the thing described.',
     solution:[c.n,
-      'Choosing <em>'+c.pos+'</em> therefore signals approval; choosing <em>'+neg+'</em> would have signalled the opposite.',
+      'Choosing <em>'+used+'</em> therefore signals '+(usedPos?'approval':'disapproval')+'; choosing <em>'+other+'</em> would have signalled the opposite.',
       'Writers pick between near-synonyms precisely to steer your judgement without ever stating an opinion outright. Noticing that choice is usually the whole point of a word-choice question.']};
 }
 
@@ -2825,7 +2829,7 @@ function elaVocab(mode,t){
    ============================================================ */
 const PASSAGES=[
 {id:'antikythera',cat:'RIT',type:'Informational &middot; Science &amp; History',title:'The Machine in the Shipwreck',
- lead:'How a corroded lump of bronze rewrote the history of technology.',
+ lead:'Adapted from an account of an underwater discovery.',
  text:[
   'In the spring of 1900, a crew of Greek sponge divers sheltering from a storm anchored off the small island of Antikythera. One diver, sent down to check the seabed, surfaced within minutes, babbling about a heap of corpses on the ocean floor. His captain assumed the pressure had confused him. It had not. The bodies were bronze and marble statues, scattered across the wreck of a Roman cargo ship that had gone down some two thousand years earlier.',
   'Over the following months the divers hauled up jewellery, coins, glassware and sculpture. Among the treasure was an unremarkable lump of corroded bronze about the size of a large book. It sat, largely ignored, in the National Archaeological Museum in Athens until it split apart and revealed something no one expected: gearwheels. Precisely cut, interlocking gearwheels, with teeth barely a millimetre across.',
@@ -2844,7 +2848,7 @@ const PASSAGES=[
       'Choices about the divers and about CT scanning are true but cover only a section each. That makes them supporting details, not the central idea.',
       'The author&rsquo;s point is the closing image: a single surviving page from a lost book. The device implies a whole tradition we cannot see.']},
   {bm:'ELA.6.R.2.2',q:'The author writes that the mechanism&rsquo;s existence &ldquo;was a problem.&rdquo; <strong>Why?</strong>',
-   o:['Its level of engineering did not fit the accepted timeline of technological history.',
+   o:['Its engineering did not fit the accepted timeline.',
       'The bronze was too corroded for scholars to study safely.',
       'The museum in Athens did not have room to display it.',
       'The divers had damaged the gears while raising the wreck.'],
@@ -2853,7 +2857,7 @@ const PASSAGES=[
       'The problem is one of <em>chronology</em>, not of condition, storage or damage.',
       'Notice the technique: the author makes a short, arresting statement, then immediately explains it. Tracking that pattern makes cause-and-effect questions quick.']},
   {bm:'ELA.6.R.2.1',q:'How does the fourth paragraph contribute to the structure of the passage?',
-   o:['It resolves the disagreement described in the previous paragraph by introducing new evidence.',
+   o:['It settles the previous paragraph&rsquo;s dispute with new evidence.',
       'It introduces a new problem that the rest of the passage leaves unanswered.',
       'It repeats the discovery narrative from the opening in more technical language.',
       'It compares ancient Greek astronomy with modern astronomy.'],
@@ -2871,7 +2875,7 @@ const PASSAGES=[
       '&ldquo;Almost none of that tradition survives&rdquo; tells you the isolation is a matter of <strong>missing relatives</strong>, not geography or emotion.',
       'This is why context beats memory. <em>Isolation</em> usually suggests loneliness or distance; here the surrounding sentences force a narrower, technical sense.']},
   {bm:'ELA.6.R.2.2',q:'Which detail from the passage <strong>best supports</strong> the idea that the mechanism was designed to be used by someone, not merely admired?',
-   o:['Thousands of tiny Greek letters formed an instruction manual on the device itself.',
+   o:['Greek letters on the device formed an instruction manual.',
       'The fragments were kept in the National Archaeological Museum in Athens.',
       'The gear teeth were barely a millimetre across.',
       'The wreck also contained jewellery, coins and glassware.'],
@@ -2880,7 +2884,7 @@ const PASSAGES=[
       'Fine gear teeth prove skill, not usage. The museum and the other cargo are irrelevant to how it was meant to be handled.',
       'On evidence questions, name the claim first, then test each choice against that exact claim. Choices that are merely <em>true</em> are the most common trap.']},
   {bm:'ELA.6.R.2.3',q:'What is the author&rsquo;s <strong>purpose</strong> in opening with the diver who described &ldquo;a heap of corpses&rdquo;?',
-   o:['To draw the reader in with a startling image and signal that first impressions were mistaken.',
+   o:['To hook the reader with a shocking image that is then corrected.',
       'To argue that deep diving was unsafe in 1900.',
       'To establish that the statues were more valuable than the mechanism.',
       'To explain the scientific method used later in the passage.'],
@@ -2890,7 +2894,7 @@ const PASSAGES=[
       'That correction sets up the passage&rsquo;s real theme — things at Antikythera are repeatedly not what they first appear, including the &ldquo;unremarkable lump&rdquo; of bronze.']}]},
 
 {id:'eratosthenes',cat:'RIT',type:'Informational &middot; Argument',title:'A Stick, a Shadow, and a Planet',
- lead:'Why one measurement made in 240 BCE still deserves a place in every mathematics classroom.',
+ lead:'An opinion piece about the teaching of mathematics.',
  text:[
   'Every year, schools spend enormous effort persuading students that geometry is useful. Every year, a reliable proportion of those students remain unconvinced. I would like to propose a cure, and it costs nothing: teach the way Eratosthenes measured the Earth.',
   'Eratosthenes ran the library at Alexandria in the third century BCE. He had read that in the town of Syene, far to the south, the sun stood directly overhead at noon on the summer solstice — sunlight reached the bottom of a deep well, and an upright pole cast no shadow at all. In Alexandria on the same day, a pole did cast a shadow. That difference is the entire experiment.',
@@ -2909,7 +2913,7 @@ const PASSAGES=[
       'The last paragraph names the reason: &ldquo;it demonstrates that a person with a stick, a well and a ratio can determine the size of a planet.&rdquo;',
       'Note that the author explicitly <em>rejects</em> accuracy as the reason, which rules out the second choice even though it sounds complimentary.']},
   {bm:'ELA.6.R.2.4',q:'Why does the author include the fourth paragraph, which lists Eratosthenes&rsquo; lucky breaks?',
-   o:['To acknowledge a counterargument before showing why it does not defeat the claim.',
+   o:['To raise an objection, then show it does not defeat the claim.',
       'To prove that the measurement was worthless and should not be taught.',
       'To provide the historical background needed to follow the calculation.',
       'To show that ancient measurement units were unreliable.'],
@@ -2977,7 +2981,7 @@ const PASSAGES=[
       'The story has already shown him hiding hardship: he skips dinner, avoids the word <em>rationing</em>, and returns from the boathouse saying &ldquo;Nothing worth the trip.&rdquo;',
       'Writing a false number is the same act, one step larger. The delay of &ldquo;four more years&rdquo; tells you it was significant enough to need growing up to see.']},
   {bm:'ELA.6.R.1.3',q:'&ldquo;Children are marvellous observers and terrible interpreters.&rdquo; How does this sentence function in the excerpt?',
-   o:['It signals that the narrator is telling the story as an adult looking back, and prepares the reader for the ending.',
+   o:['It shows the narrator is an adult looking back on the events.',
       'It criticises the narrator&rsquo;s mother for failing to explain the situation to a child.',
       'It provides a moment of comic relief in the middle of an otherwise tense scene.',
       'It establishes that the narrator was an unusually careless and inattentive child.'],
@@ -3005,7 +3009,7 @@ const PASSAGES=[
       'That choice controls the reader&rsquo;s knowledge. We are never told the father&rsquo;s thoughts, only what a watching child could see — which is exactly why the ending lands.']}]},
 
 {id:'cartographer',cat:'RPP',type:'Literary &middot; Poetry',title:'Cartographer',
- lead:'A poem in free verse.',
+ lead:'A poem.',
  poem:[
   ['She drew the coastline first,','the way you draw a promise:','lightly, in case.'],
   ['The rivers came in blue','and disobeyed her,','running past the margin','into the wood of the desk.'],
@@ -3052,7 +3056,7 @@ const PASSAGES=[
       'The form enacts the content: an admission of emptiness is given emptiness around it.',
       'The other choices describe formal features the poem does not have — it is free verse, with stanzas of unequal length and no rhyme scheme.']},
   {bm:'ELA.6.R.1.4',q:'What is the effect of the final stanza&rsquo;s phrase &ldquo;once a year&rdquo;?',
-   o:['It suggests a private ritual, giving the act the weight of remembrance.',
+   o:['It suggests a private yearly ritual of remembrance.',
       'It shows the grandmother was forgetful and rarely thought of the map.',
       'It implies the map was too fragile to be handled more often.',
       'It establishes exactly how old the map was.'],
@@ -3088,10 +3092,10 @@ const PASSAGES=[
       'Passage 1 relies on personal stories; Passage 2 relies on scientific studies.',
       'Passage 1 discusses elementary schools; Passage 2 discusses high schools.',
       'Passage 1 argues for change; Passage 2 argues that no change should be made.'],
-   c:0,h:'Be careful with the last choice — check Passage 2&rsquo;s final paragraph before choosing it.',
+   c:0,h:'One choice claims Passage 2 opposes any change. Check its final paragraph before you accept that.',
    s:['Passage 1 catalogues outcomes: attendance, tardiness, crash rates, extra sleep.',
       'Passage 2 catalogues consequences: bus fleets, dismissal times, athletics, childcare — and asks who pays.',
-      'The last choice is the trap. Passage 2 says plainly, &ldquo;None of this argues for doing nothing.&rdquo; It wants the change costed and phased, not cancelled.']},
+      'The trap is the choice saying Passage 2 argues against change. Passage 2 says plainly, &ldquo;None of this argues for doing nothing.&rdquo; It wants the change costed and phased, not cancelled.']},
   {bm:'ELA.6.R.2.4',q:'A reader wants to argue that later start times are worth the expense. Which detail from <strong>Passage 2</strong> would be <em>most</em> useful to address first?',
    o:['The claim that staggered bus routes let one fleet do the work of two.',
       'The observation that younger children wake early anyway.',
@@ -3102,7 +3106,7 @@ const PASSAGES=[
       'Dismissal, athletics and childcare are all downstream consequences of that same scheduling machine.',
       'Answer the load-bearing objection and the rest weaken with it. Answer a downstream one and the core problem survives untouched.']},
   {bm:'ELA.6.R.3.1',q:'The author of Passage 2 writes that start times are &ldquo;one gear in a machine.&rdquo; This comparison is used to suggest that:',
-   o:['changing one part of a school schedule forces changes in many connected parts.',
+   o:['one change to a school schedule forces many others.',
       'school administrators are inflexible and mechanical in their thinking.',
       'the school system is outdated and needs to be replaced.',
       'bus drivers have the hardest job in the district.'],
@@ -3111,7 +3115,7 @@ const PASSAGES=[
       'The paragraph then demonstrates the metaphor literally — move the secondary bell and the elementary bell, the fleet size and the budget all move too.',
       'Test a metaphor by asking what property is being transferred. Here it is <em>interconnection</em>, not age, rigidity or difficulty.']},
   {bm:'ELA.6.R.3.3',q:'Which statement <strong>best</strong> describes how the two passages treat evidence?',
-   o:['Passage 1 cites studies and measured outcomes; Passage 2 reasons from logistical consequences.',
+   o:['Passage 1 cites studies; Passage 2 reasons from consequences.',
       'Both passages rely almost entirely on statistics from the same studies.',
       'Passage 1 avoids evidence; Passage 2 provides all of the data.',
       'Both passages depend chiefly on the personal experiences of students.'],
@@ -3121,7 +3125,7 @@ const PASSAGES=[
       'Neither approach is automatically stronger. Recognising which kind of support an author uses is what lets you judge an argument fairly.']}]},
 
 {id:'surveyor',cat:'RPP',type:'Literary &middot; Sonnet',title:'The Surveyor',
- lead:'A sonnet in the English form.',
+ lead:'A poem.',
  poem:[
   ['They gave me chain and compass, told me: mark','the boundary where the marsh gives way to sand.','I walked it once by day and once by dark','and found two different countries in the land.'],
   ['By noon the water quits at the third stake;','by midnight it has climbed to cover four.','I cannot draw a line a tide will break,','nor promise where the sea will end its war.'],
@@ -3177,7 +3181,7 @@ const PASSAGES=[
       'That is the sting: the qualification he cared most about is exactly the part that does not outlast him.']}]},
 
 {id:'ferryman',cat:'RPP',type:'Literary &middot; Ballad',title:'The Ferryman of Pelican Key',
- lead:'A ballad. Notice the repeated final line of each stanza.',
+ lead:'A ballad.',
  poem:[
   ['The ferryman took no man&rsquo;s coin','from child, nor crone, nor thief;','he said the river paid him well.','And the water keeps its own.'],
   ['A merchant came with silver rings','and begged to cross by night.','The ferryman looked at the rings, and then','at the water. It keeps its own.'],
@@ -3186,7 +3190,7 @@ const PASSAGES=[
   ['The ferryman still takes no coin.','He rows from six to four.','He does not speak about the rings.','But the water keeps its own.']],
  items:[
   {bm:'ELA.6.R.1.4',q:'What is the effect of repeating &ldquo;the water keeps its own&rdquo; at the end of every stanza?',
-   o:['It builds a sense of inevitability, so the merchant&rsquo;s fate feels settled before it happens.',
+   o:['It makes the merchant&rsquo;s fate feel settled in advance.',
       'It shows that the ferryman is forgetful and repeats himself.',
       'It marks where the reader should pause for breath.',
       'It proves the river is a character who speaks in the poem.'],
@@ -3204,7 +3208,7 @@ const PASSAGES=[
       'He then names the cause &mdash; &ldquo;The tide is turning&rdquo; &mdash; and offers a safe alternative: &ldquo;Come at dawn.&rdquo;',
       'The first stanza already established he takes no coin from anyone, so this is consistent character, not prejudice against merchants.']},
   {bm:'ELA.6.R.1.1',q:'&ldquo;By morning there were rings washed up.&rdquo; What has the poet chosen <strong>not</strong> to say, and why?',
-   o:['The merchant&rsquo;s death &mdash; leaving the reader to infer it makes the moment colder and more powerful.',
+   o:['The merchant&rsquo;s death, which the reader must infer.',
       'The ferryman&rsquo;s reaction &mdash; because he did not care.',
       'The weather that night &mdash; because it was not important.',
       'Who found the rings &mdash; because that person is a suspect.'],
@@ -3214,7 +3218,7 @@ const PASSAGES=[
       'This is deliberate understatement, a technique ballads use constantly: the plainer the language, the harder the event lands.']},
   {bm:'ELA.6.R.1.1',type:'twopart',
    qA:'What does the last stanza suggest about the ferryman <strong>after</strong> the events of the poem?',
-   oA:['He is unchanged in his habits but carries the memory silently.',
+   oA:['His habits are unchanged, but he carries it silently.',
       'He has given up ferrying and left the key.',
       'He has begun accepting payment for crossings.',
       'He blames himself publicly for the merchant&rsquo;s death.'],
@@ -3226,12 +3230,12 @@ const PASSAGES=[
    s:['The routine lines &mdash; no coin, six to four &mdash; establish that nothing outward has changed.',
       '&ldquo;He does not speak about the rings&rdquo; is the only line about his inner life, and it tells us the memory is present precisely because he will not mention it.',
       'Note also the final refrain begins with <strong>&ldquo;But&rdquo;</strong> for the first time, quietly marking that something has shifted after all.']},
-  {bm:'ELA.6.R.3.3',q:'Both this ballad and the sonnet <em>The Surveyor</em> deal with people who understand water better than the people around them. How do the two poems <strong>differ</strong> in what happens as a result?',
-   o:['In the ballad the warning is ignored and someone dies; in the sonnet the warning is recorded and simply forgotten.',
-      'In the ballad the speaker is proven wrong; in the sonnet the speaker is proven right.',
-      'Both poems end with the expert being punished for speaking up.',
-      'The ballad concerns the sea while the sonnet concerns a river.'],
-   c:0,h:'In each poem, ask: what happens to the expert&rsquo;s warning?',
+  {bm:'ELA.6.R.1.4',q:'A ballad tells a story in short stanzas, often with a line that returns each time. <strong>What does the ballad form do here that plain prose could not?</strong>',
+   o:['The returning line keeps the river present while the human argument goes on around it.',
+      'The short stanzas allow the poet to include far more factual detail about the crossing.',
+      'The regular rhythm signals to the reader that the events described are meant to be comic.',
+      'The stanza breaks show how much time passes between one event and the next in the story.'],
+   c:0,h:'Ask what the repeated line is doing while the merchant and the ferryman are arguing.',
    s:['The ferryman warns aloud, the merchant ignores him, and the consequence is immediate and fatal.',
       'The surveyor writes his warning in &ldquo;smaller hand&rdquo; underneath the line; nobody ignores it dramatically &mdash; it is simply not kept.',
       'Same insight, two fates: one warning is refused, the other is filed and lost. Comparing across genres works best when you hold one idea steady and watch what each text does with it.']}]},
@@ -3255,7 +3259,7 @@ const PASSAGES=[
   '<strong>MS. ARVANITIS:</strong> That was the first interesting thing you have played all year. <em>(She stands and returns to the window.)</em> From the top of the second page.'],
  items:[
   {bm:'ELA.6.R.1.1',q:'What does Ms. Arvanitis mean when she says &ldquo;Nothing. That is the difficulty&rdquo;?',
-   o:['Theo is playing accurately, and accuracy alone is the problem she wants him to see.',
+   o:['He is playing it accurately, and that is the problem.',
       'She has not been listening and cannot identify a mistake.',
       'She believes Theo is not capable of improving.',
       'She thinks the piece is too easy for him.'],
@@ -3274,18 +3278,18 @@ const PASSAGES=[
       'In drama the directions do the work a narrator would do in prose &mdash; and they never state a character&rsquo;s thoughts outright, which is why the third choice is wrong.']},
   {bm:'ELA.6.R.1.2',type:'twopart',
    qA:'What has changed in Theo by the end of the scene?',
-   oA:['He has discovered that a deliberate imperfection can carry meaning.',
+   oA:['A deliberate imperfection can carry meaning.',
       'He has decided to stop taking lessons.',
       'He has learned to play bar thirty-one faster.',
       'He has realised his teacher does not respect him.'],
    cA:0,
    qB:'Which line or direction <strong>best supports</strong> your answer to Part A?',
    oB:['&ldquo;the third one is held a fraction too long, and something in the room changes&rdquo;',
-       '&ldquo;I played it right.&rdquo;',
-       '&ldquo;That is not a musical instruction.&rdquo;',
-       '&ldquo;She stands and returns to the window.&rdquo;'],
+       '&ldquo;She crosses and sits down two chairs away from him, which is closer than she usually sits.&rdquo;',
+       '&ldquo;Now play it as though you were telling me something you did not want to say.&rdquo;',
+       '&ldquo;That was the first interesting thing you have played all year.&rdquo;'],
    cB:0,
-   h:'Find the moment where his playing is described differently from the first time, and note what the room does in response.',
+   h:'Part B has to show the playing itself changing, not the teacher reacting to it. Which line describes the sound?',
    s:['The first time, the four notes are &ldquo;clean and fast&rdquo;. The second time, one note is &ldquo;held a fraction too long&rdquo;.',
       'That deviation is what makes the room change &mdash; the imperfection is the meaning.',
       'Theo calls it &ldquo;worse&rdquo; because he is still judging by accuracy. His teacher calls it &ldquo;the first interesting thing&rdquo;, which is the lesson he has just begun to learn.']},
@@ -3309,7 +3313,7 @@ const PASSAGES=[
       'But Theo has just discovered something, so the repeated line lands differently. A circular structure like this asks the reader to measure the distance travelled inside an unchanged frame.']}]},
 
 {id:'daedalus',cat:'RPP',type:'Literary &middot; Myth Retelling',title:'Daedalus Answers',
- lead:'A retelling of the Icarus story, told by his father.',
+ lead:'A retelling of the Icarus story.',
  text:[
   'They ask me the same question, and they ask it kindly, which is worse. They ask whether I warned him.',
   'Of course I warned him. I warned him in the workshop while the wax was still soft. I warned him on the cliff with the straps in my hands. Not too low, or the sea will soak the feathers and they will weigh you into the water. Not too high, or the sun will soften the wax and the feathers will come away. Keep to the middle. Follow me. I said it four times. I said it a fifth time and he laughed, because a boy who has been told a thing five times has stopped hearing it on the third.',
@@ -3320,7 +3324,7 @@ const PASSAGES=[
   'They will carve me as the clever one. They always do. In the version they will tell, the boy is the whole lesson: do not fly too near the sun. Nobody carves the man who made the wings that could reach it.'],
  items:[
   {bm:'ELA.6.R.1.3',q:'How does telling this story from <strong>Daedalus&rsquo;s</strong> point of view change it?',
-   o:['It shifts the focus from Icarus&rsquo;s recklessness to his father&rsquo;s responsibility.',
+   o:['It moves the blame from Icarus to his father.',
       'It makes the events easier to follow in order.',
       'It removes any sense of blame from the story.',
       'It proves that the traditional version of the myth is false.'],
@@ -3329,7 +3333,7 @@ const PASSAGES=[
       'This telling barely describes the flight. It spends its length on a design decision the father made before anyone left the ground.',
       'The traditional story is not contradicted; it is re-aimed. That is what a change of perspective does to a well-known tale.']},
   {bm:'ELA.6.R.1.1',q:'What does Daedalus mean by &ldquo;I gave him the means to disobey me and then I told him not to&rdquo;?',
-   o:['He built wings capable of the very flight he forbade, which made the warning insufficient.',
+   o:['He built wings capable of the flight he forbade.',
       'He deliberately encouraged his son to fly higher than instructed.',
       'He forgot to explain the danger before the flight.',
       'He believes his son disobeyed him on purpose to prove a point.'],
@@ -3339,7 +3343,7 @@ const PASSAGES=[
       'He is not saying he encouraged the flight. He is saying a spoken rule was a weak safeguard against a machine he built to break it.']},
   {bm:'ELA.6.R.2.2',type:'twopart',
    qA:'Why does Daedalus admit that saying &ldquo;yes&rdquo; is &ldquo;not a lie, and it is not an answer either&rdquo;?',
-   oA:['The warning was genuine, but it does not address the question of what he built.',
+   oA:['The warning was genuine, but it is not the whole question.',
       'He cannot remember exactly what he said to his son.',
       'He is refusing to speak to the people who question him.',
       'He now believes the warning was never actually given.'],
@@ -3355,7 +3359,7 @@ const PASSAGES=[
       'But the confession in paragraph 4, &ldquo;I built a pair of wings that could fail&rdquo;, is about a decision no warning could undo.',
       'So a truthful yes still dodges the real charge. Notice that &ldquo;the best work of my life&rdquo; is a defence of his skill, not of his judgement &mdash; which is exactly the distinction he is drawing.']},
   {bm:'ELA.6.R.3.1',q:'What is the effect of the closing line, &ldquo;Nobody carves the man who made the wings that could reach it&rdquo;?',
-   o:['It suggests that the story people remember conveniently leaves out the adult&rsquo;s part in it.',
+   o:['The remembered story leaves out the adult&rsquo;s part.',
       'It complains that Daedalus was never honoured for his craftsmanship.',
       'It predicts that the myth will eventually be forgotten.',
       'It states that sculptors of the period avoided difficult subjects.'],
@@ -3364,7 +3368,7 @@ const PASSAGES=[
       '&ldquo;Carving&rdquo; here means being commemorated in the story people keep. Nobody commemorates the maker&rsquo;s share of the fault.',
       'He is not asking for credit &mdash; paragraph 7 opens with &ldquo;They will carve me as the clever one&rdquo;, which he clearly resents. He is objecting to a story shaped to spare the adult.']},
   {bm:'ELA.6.R.1.2',q:'Which statement <strong>best</strong> expresses a theme of this retelling?',
-   o:['Giving a warning does not discharge the responsibility of the person who created the danger.',
+   o:['A warning does not discharge the maker&rsquo;s responsibility.',
       'Children will always ignore the advice of their parents.',
       'Great craftsmanship is usually undervalued by the public.',
       'Grief makes it impossible to think clearly about the past.'],
@@ -3374,7 +3378,7 @@ const PASSAGES=[
       'He explicitly rejects the idea that grief has clouded him &mdash; &ldquo;I have thought about this more carefully than any of them ever will.&rdquo;']}]},
 
 {id:'icecore',cat:'RIT',type:'Informational &middot; Science',title:'What the Ice Remembers',
- lead:'How a cylinder of frozen water became one of the most valuable records on Earth.',
+ lead:'Adapted from an article about Antarctic ice cores.',
  text:[
   'Snow that falls on the interior of Antarctica does not melt. It is buried by the next year&rsquo;s snow, and the year after that, and under the growing weight it compresses into ice. Crucially, as it compresses it traps small bubbles of the air that happened to be there when the snow fell. Each bubble is a sealed sample of the atmosphere on a particular ancient day.',
   'A drill lowered into that ice brings up a cylinder, a metre or two at a time, that can be reassembled into a continuous column reaching back hundreds of thousands of years. The deepest cores recovered so far extend past 800,000 years, and a project drilling at a site called Little Dome C is working to more than double that.',
@@ -3393,7 +3397,7 @@ const PASSAGES=[
       'Paragraph 1 sets this up with the trapped bubbles, and the rest of the passage explains how that record is read.',
       'The other choices are all true statements from the passage, but each covers only one paragraph. That is the standard central-idea trap.']},
   {bm:'ELA.6.R.2.1',q:'How is the <strong>third paragraph</strong> organised?',
-   o:['It divides dating into two methods and explains why the second becomes necessary.',
+   o:['It gives two dating methods and why the second is needed.',
       'It lists the equipment used in the order it is deployed.',
       'It compares Antarctic ice with Greenland ice.',
       'It presents a problem for which the passage offers no solution.'],
@@ -3402,7 +3406,7 @@ const PASSAGES=[
       'Near the surface, layers are counted. Deeper, &ldquo;counting becomes impossible&rdquo;, so models plus volcanic ash markers take over.',
       'The structure is problem-and-workaround, and the transition is signalled by &ldquo;Deeper down&rdquo;. Tracking those signal words is the fastest route to a structure question.']},
   {bm:'ELA.6.V.1.3',q:'As used in the final paragraph, <strong><em>proxies</em></strong> most nearly means:',
-   o:['indirect substitutes used when direct evidence is unavailable',
+   o:['indirect substitutes for evidence you cannot get',
       'scientists who work on behalf of another institution',
       'errors introduced by imprecise instruments',
       'official permissions required before drilling'],
@@ -3412,16 +3416,16 @@ const PASSAGES=[
       'So a proxy stands in for the thing you actually want. The everyday meaning of <em>proxy</em> &mdash; a person acting for another &mdash; is the trap here; context forces the scientific sense.']},
   {bm:'ELA.6.R.2.2',type:'twopart',
    qA:'Why does the author include the final paragraph about the limits of the ice record?',
-   oA:['To be candid about what the method cannot do, which strengthens the claim about what it can.',
+   oA:['Admitting the limit strengthens the claim that follows.',
       'To argue that ice-core research is not worth continuing.',
       'To suggest that ocean sediments are a better source of evidence.',
       'To explain why the drilling at Little Dome C was cancelled.'],
    cA:0,
    qB:'Which sentence <strong>best supports</strong> your answer to Part A?',
    oB:['&ldquo;The ice is the only place on Earth where the atmosphere of the distant past is not inferred but physically preserved.&rdquo;',
-       '&ldquo;Ice flows, thins and eventually melts from below where the bedrock is warm.&rdquo;',
-       '&ldquo;Beyond it, scientists must rely on indirect proxies.&rdquo;',
-       '&ldquo;The deepest cores recovered so far extend past 800,000 years.&rdquo;'],
+       '&ldquo;A drill lowered into that ice brings up a cylinder, a metre or two at a time, that can be reassembled into a continuous column reaching back hundreds of thousands of years.&rdquo;',
+       '&ldquo;Deeper down, the weight above squeezes the layers so thin that counting becomes impossible, and researchers must fall back on models of how ice flows.&rdquo;',
+       '&ldquo;What the cores show is a planet that has swung repeatedly between glacial and warmer periods, and that carbon dioxide has risen and fallen roughly in step with temperature.&rdquo;'],
    cB:0,
    h:'The paragraph states a limitation and then ends on a claim. Which of those two is the paragraph actually building toward?',
    s:['The paragraph concedes a real weakness &mdash; the archive has a floor &mdash; and calls the alternatives &ldquo;far less direct&rdquo;.',
@@ -3457,7 +3461,7 @@ const PASSAGES=[
       'Yet the 2004 entry tells him something no explanation would have: his grandfather saw joy where he could have recorded disobedience.',
       'The closing line seals it &mdash; &ldquo;you will not waste it on being right&rdquo;. Selection, not explanation, is what reveals character here.']},
   {bm:'ELA.6.R.1.1',q:'What is the effect of the narrator quoting the notebook entries directly, in italics?',
-   o:['Their plainness contrasts with the narrator&rsquo;s own long sentences, showing exactly what he admires.',
+   o:['Their plainness is exactly what the narrator admires.',
       'They provide the factual dates needed to follow the chronology.',
       'They suggest the grandfather was a skilled writer.',
       'They prove that the events described actually happened.'],
@@ -3492,7 +3496,7 @@ const PASSAGES=[
       'And the paragraphs &ldquo;have not survived&rdquo; while the one-line entries have.',
       '<em>Compression</em> is being used figuratively: packing meaning into very little space. The literal senses &mdash; physical force, small storage &mdash; are exactly the traps context rules out.']},
   {bm:'ELA.6.R.1.3',q:'Why does the narrator tell us he does <strong>not</strong> remember the cicadas?',
-   o:['To show that the grandfather&rsquo;s record preserved something the narrator himself had lost.',
+   o:['The record preserved something the narrator had forgotten.',
       'To suggest that the grandfather invented the entry.',
       'To explain why he stopped reading the notebook.',
       'To establish that he was too young to be outdoors alone.'],
@@ -3525,7 +3529,7 @@ const PASSAGES=[
       'The subject is identical; only the kind of explanation differs.',
       'Only Passage 2 uses measurements, and neither accuses anyone of dishonesty &mdash; Passage 2 explicitly calls the wrong answer &ldquo;a good one&rdquo;.']},
   {bm:'ELA.6.R.3.3',q:'How does the <strong>kind of explanation</strong> differ between the two passages?',
-   o:['Passage 1 explains the seasons through a story about people; Passage 2 explains them through a physical mechanism.',
+   o:['Passage 1 explains the seasons with a story; Passage 2 with a mechanism.',
       'Passage 1 is a first-hand account; Passage 2 is second-hand.',
       'Passage 1 states an opinion; Passage 2 states a fact of the same kind.',
       'Passage 1 is intended for children and Passage 2 for adults.'],
@@ -3534,7 +3538,7 @@ const PASSAGES=[
       'In Passage 2 the cause is axial tilt, described through angle, area and day length.',
       'These are different <em>kinds</em> of explanation, not merely different opinions about the same kind. Passage 1&rsquo;s last sentence says as much: the Greeks &ldquo;did not think this was a story about weather&rdquo;.']},
   {bm:'ELA.6.R.3.4',q:'Why does the author of Passage 2 begin by describing the <strong>wrong</strong> answer?',
-   o:['To meet the reader&rsquo;s likely assumption head-on before replacing it.',
+   o:['To raise the reader&rsquo;s own wrong guess, then replace it.',
       'To make fun of people who believe it.',
       'To show that scientists disagree about the cause of the seasons.',
       'To avoid having to explain the real cause in detail.'],
@@ -3550,10 +3554,10 @@ const PASSAGES=[
        'The Earth is closest to the Sun in early January.'],
    cA:0,
    qB:'<strong>Why</strong> does that evidence settle it?',
-   oB:['At any moment the whole planet is the same distance from the Sun, so distance cannot make one half warm and the other cold.',
-       'It shows that the Earth&rsquo;s orbit is not a perfect circle.',
-       'It proves that the tilt changes throughout the year.',
-       'It demonstrates that January is colder than July everywhere.'],
+   oB:['&ldquo;A distance-based explanation could never produce that, because the whole planet is the same distance from the Sun at any given moment.&rdquo;',
+       '&ldquo;The Earth&rsquo;s orbit is very nearly circular, and in fact the planet is closest to the Sun in early January &mdash; the depth of the northern winter.&rdquo;',
+       '&ldquo;Sunlight striking a tilted surface is spread across a larger area, so each patch of ground receives less energy.&rdquo;',
+       '&ldquo;The two effects compound, which is why the difference between summer and winter is far larger than the tilt alone might suggest.&rdquo;'],
    cB:0,
    h:'Two facts in the passage challenge the distance idea. One is awkward for it; the other makes it impossible. Find the impossible one.',
    s:['The January fact is awkward for the distance theory but a determined defender might argue around it.',
@@ -3747,7 +3751,7 @@ const EXTRA_ITEMS=[
       'That is <strong>pathos</strong> &mdash; the appeal works by making the reader feel the problem before any argument is made.',
       '&ldquo;A reliable proportion&hellip; remain unconvinced&rdquo; sounds like evidence but supplies no number; its work is to make the reader nod in recognition. Part B is where an evidence-based item checks whether you can locate the appeal, not just name it.']},
   {bm:'ELA.6.R.2.4',q:'In the fourth and fifth paragraphs, what <strong>type of reasoning</strong> does the author use?',
-   o:['Concession followed by rebuttal &mdash; granting the objection, then narrowing the claim so it survives.',
+   o:['Concession and rebuttal &mdash; granting the objection, then answering it.',
       'Cause and effect &mdash; showing that one event directly produced another.',
       'Appeal to authority &mdash; citing an expert who settles the dispute.',
       'Analogy &mdash; arguing that two unlike situations are essentially similar.'],c:0,
@@ -3780,7 +3784,7 @@ const EXTRA_ITEMS=[
 
 {id:'icecore',items:[
   {bm:'ELA.6.R.2.4',q:'What <strong>type of reasoning</strong> does the author use in the fifth paragraph to support the claim about carbon dioxide?',
-   o:['Appeal to a long, continuous record so that the recent period can be compared with hundreds of thousands of years.',
+   o:['Appeal to a record long enough to put the present in context.',
       'Appeal to the authority of the researchers who recovered and analysed the deepest cores.',
       'Analogy between the layers in an ice core and the growth rings inside a tree.',
       'A prediction about what the future drilling at Little Dome C is expected to show.'],c:0,
@@ -3905,6 +3909,11 @@ function deckBenchmarks(){
     if(deck==='six')return SIX.map(c=>ALLB[c]);
     if(deck==='mix'||deck==='mock')return MATH_CATS.filter(c=>c.id!=='G7').flatMap(c=>c.bs);
     return (MATH_CATS.find(c=>c.id===deck)||{bs:[]}).bs;
+  }
+  if(deck==='AG'){                                   // by benchmark, not by which passage it sits in
+    const want=['ELA.6.R.3.1','ELA.6.R.3.3','ELA.6.R.3.4'];
+    const ids=[...new Set(PASSAGES.filter(p=>p.items.some(it=>want.indexOf(it.bm)>=0)).map(p=>p.id))];
+    return ELA_CATS[0].bs.concat(ids.map(id=>ALLB['P.'+id]));
   }
   if(deck==='V')return ELA_CATS[0].bs;
   if(deck==='mix'||deck==='rmock'||deck==='testweek')return ELA_CATS[0].bs.concat(PASSAGES.map(p=>ALLB['P.'+p.id]));
@@ -4629,8 +4638,10 @@ function passageItemToCur(pg,i){
     const om=SH(it.o.map((o,k)=>({o,ok:it.c.indexOf(k)>=0})));
     inp={kind:'multi',options:om.map(x=>x.o),correct:om.map(x=>x.ok)};
   } else if(it.type==='table'){
-    inp={kind:'table',rowHead:it.rowHead||'',cols:it.cols,
-         rows:it.rows.map(r=>({label:r.label,plain:r.label.replace(/<[^>]*>/g,''),correct:r.correct}))};
+    const order=SH(it.cols.map((c,i)=>i));            // columns in a fresh order every time
+    const remap={}; order.forEach((oldI,newI)=>{ remap[oldI]=newI; });
+    inp={kind:'table',rowHead:it.rowHead||'',cols:order.map(i=>it.cols[i]),
+         rows:SH(it.rows.map(r=>({label:r.label,plain:r.label.replace(/<[^>]*>/g,''),correct:remap[r.correct]})))};
   } else {
     const oo=SH(it.o.map((o,k)=>({o,ok:k===it.c})));
     inp={kind:'mc',options:oo.map(x=>x.o),correct:oo.findIndex(x=>x.ok)};
