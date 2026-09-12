@@ -5055,7 +5055,13 @@ function renderNav(){
   if(missDeck&&missDeck.codes.length)h+='<button class="deck six" data-deck="misses" aria-current="'+(deck==='misses')+'">My Misses ('+missDeck.codes.length+')</button>';
   h+='</div><nav class="rail" id="rail" aria-label="Benchmarks"></nav>';
   el('nav').innerHTML=h;
-  el('nav').querySelectorAll('.sub-tab').forEach(b=>b.onclick=()=>{subject=b.dataset.subject;deck=subject==='ela'?'testweek':DECKS[subject][0].id;activePassage=null;renderNav();nextItem();});
+  el('nav').querySelectorAll('.sub-tab').forEach(b=>b.onclick=()=>{
+    subject=b.dataset.subject; deck=subject==='ela'?'testweek':DECKS[subject][0].id;
+    activePassage=null; dayRun=null; plan=null;
+    if(mock){ mock=null; if(mockTimer){clearInterval(mockTimer); mockTimer=null;} }  // leaving ends the paper
+    document.querySelector('main').classList.remove('reading','testframe');
+    renderNav(); nextItem();
+  });
   el('nav').querySelectorAll('.deck').forEach(b=>b.onclick=()=>{deck=b.dataset.deck;activePassage=null;dayRun=null;plan=null;mock=null;renderNav();nextItem();});
   renderRail();
 }
@@ -5081,6 +5087,10 @@ function renderRail(){
 }
 function renderLedger(){
   const bs=deckBenchmarks();
+  const led=document.querySelector('.ledger');
+  const midPaper=!!mock&&mock.phase!=='done';
+  if(led)led.hidden=midPaper||deck==='papers';
+  if(midPaper&&el('coach'))el('coach').hidden=true;
   if(deck==='papers'){ el('ledgerBody').innerHTML=''; }
   el('ledgerBody').innerHTML=bs.map(b=>{
     const s=bst(b.code), acc=s.tried?Math.round(s.right/s.tried*100):null;
@@ -5355,7 +5365,7 @@ function renderItem(){
   if(el('eqPad')){ eqSync(); wireEq(); }
   if(el('eqSwap'))el('eqSwap').onclick=()=>{ ST.eq=!ST.eq; save(); renderItem(); };
   wire();
-  el('btnCheck').disabled=false;el('btnCheck').textContent='Check';
+  el('btnCheck').hidden=false;el('btnCheck').disabled=false;el('btnCheck').textContent='Check';
   el('btnHint').hidden=!cur.hint;el('btnHint').disabled=!cur.hint;el('btnSkip').hidden=false;el('btnSkip').disabled=false;
   showActions(true);
   t0=performance.now();
@@ -6383,6 +6393,7 @@ function renderMockBrief(){
       '<button class="tog" id="bailMock">Not now</button></div>';
   el('btnCheck').disabled=true; el('btnHint').disabled=true; el('btnSkip').disabled=true;
   renderRail();                                  // no practice furniture on the briefing either
+  renderLedger();
   el('beginMock').onclick=beginMock;
   el('bailMock').onclick=()=>{ mock=null; if(mockTimer)clearInterval(mockTimer);
     deck=R?'RIT':'six'; subject=R?'ela':'math'; renderNav(); nextItem(); };
@@ -6668,6 +6679,7 @@ function renderMock(){
   restoreResp();
   mock.itemT0=Date.now(); mock.seen[mock.idx]=(mock.seen[mock.idx]||0)+1;
   mock.reached=Math.max(mock.reached||0,mock.idx);
+  renderLedger();
   const ks=el('kStreak'); if(ks)ks.textContent='Pace';
   el('pCode').innerHTML=mock.reading?'MOCK PM &middot; READING':'MOCK PM &middot; MATHEMATICS';
   el('pName').innerHTML='';
@@ -6882,7 +6894,9 @@ function finishMock(){
   el('answer').innerHTML='<div class="tablescroll"><table><thead><tr><th>Strand</th><th class="num">Right</th><th class="num">Asked</th></tr></thead><tbody>'+
     Object.keys(byCat).map(k=>'<tr><td>'+k+'</td><td class="num">'+byCat[k].r+'</td><td class="num">'+byCat[k].t+
       ' <span style="color:var(--ink-3)">('+Math.round(byCat[k].t/mock.ans.length*100)+'%)</span></td></tr>').join('')+'</tbody></table></div>'+
-    (missed.length?'<div class="seqline" style="margin-top:14px">Missed: '+missed.map(a=>a.short).join(' &middot; ')+'</div>':'')+
+    (missed.length?'<div class="seqline" style="margin-top:14px">Missed: '+
+      [...new Set(missed.map(a=>a.short))].slice(0,12).join(' &middot; ')+
+      (new Set(missed.map(a=>a.short)).size>12?' &middot; and '+(new Set(missed.map(a=>a.short)).size-12)+' more':'')+'</div>':'')+
     '<div class="builder" style="margin-top:16px"><button class="tog" id="againMock">Take another paper</button>'+
     '<button class="tog" id="openPapers">Review papers</button>'+
     '<button class="tog" id="copyPaper">Copy for review</button>'+
@@ -7127,7 +7141,7 @@ function renderPapers(){
     });
     if(rep.length){
       h+='<div class="trapnote" style="margin-top:16px"><b>Missed on more than one paper.</b> '+
-        rep.map(x=>x.short+' ('+x.n+'×)').join(' &middot; ')+
+        rep.map(x=>(ELA_NAMES[x.code]||x.short||x.code)+' ('+x.n+'×)').join(' &middot; ')+
         '<div class="builder" style="margin-top:10px"><button class="btn" id="drillRep">Practise these '+rep.length+'</button></div></div>';
     }
     h+='<div class="builder" style="margin-top:16px">'+
