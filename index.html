@@ -6457,6 +6457,16 @@ function restoreResp(){
     inlinePick.forEach((ci,pi)=>{ if(ci===undefined||ci===null)return;
       const g=el('answer').querySelector('.inlinesel[data-g="'+pi+'"]'); if(!g)return;
       const c=g.querySelectorAll('.ichip')[ci]; if(c)c.setAttribute('aria-pressed','true'); }); }
+  else if(I.kind==='hottext'){ hotPick=r.v.slice();
+    el('answer').querySelectorAll('.hot').forEach(b=>b.classList.toggle('on',hotPick.indexOf(+b.dataset.i)>=0)); }
+  else if(I.kind==='drag'){ dragPick=r.v.slice(); dragHeld=null;
+    el('answer').querySelectorAll('.dchip').forEach(c=>{
+      const i=+c.dataset.i, bk=dragPick[i];
+      const home=(bk===null||bk===undefined)?el('dragTray'):el('answer').querySelector('.dbin[data-b="'+bk+'"]');
+      if(home&&c.parentNode!==home)home.appendChild(c);
+      c.classList.toggle('placed',bk!==null&&bk!==undefined);
+      c.classList.remove('held');
+    }); }
 }
 /* ---- the real test's controls: Back | Next | Flag, an item list, and tools ---- */
 function mockBar(){
@@ -6483,7 +6493,13 @@ function renderMockBar(){
   const host=el('mockbar'); if(!host)return;
   host.innerHTML=mockBar();
   el('tdsBack').onclick=()=>mockGo(mock.idx-1);
-  el('tdsNext').onclick=()=>{ if(mock.idx===mock.qs.length-1){captureResp();mockReview();} else mockGo(mock.idx+1); };
+  el('tdsNext').onclick=()=>{
+    if(!mockAnswered()&&!mock.flags[mock.idx]){
+      if(!confirm('You have not answered this question.\n\nNothing is deducted for a wrong answer, so a guess always beats a blank.\n\nLeave it blank and move on?'))return;
+      mock.warned=(mock.warned||0)+1;                 // how often he tried to walk past a blank
+    }
+    if(mock.idx===mock.qs.length-1){captureResp();mockReview();} else mockGo(mock.idx+1);
+  };
   el('tdsFlag').onclick=()=>{ mock.flags[mock.idx]=!mock.flags[mock.idx]; renderMockBar(); };
   el('tdsStrike').onclick=()=>{ mock.strikeOn=!mock.strikeOn; renderMockBar(); applyStrikeMode(); };
   el('tdsZoom').onclick=()=>{ mock.zoom=(mock.zoom||1)+.15; if(mock.zoom>1.65)mock.zoom=1;
@@ -6836,7 +6852,7 @@ function finishMock(){
     right, tot, mins,
     minutes:Math.round((Date.now()-mock.start)/60000),
     pausedMin:Math.round((mock.pausedMs||0)/60000),
-    timedOut:!!mock.timedOut,
+    timedOut:!!mock.timedOut, warned:mock.warned||0,
     items:mock.ans.map(a=>Object.assign({},a))
   };
   ST.papers=ST.papers||[]; ST.papers.unshift(paper); if(ST.papers.length>15)ST.papers.length=15;
@@ -6938,6 +6954,8 @@ function diagnose(pp){
       :'Every change you made was an improvement, so going back is working for you.';
     h+='</p>';
   }
+  if(pp.warned)h+='<p>You tried to move past a blank question <strong>'+pp.warned+'</strong> time'+(pp.warned===1?'':'s')+
+    '. Every time you do that on the real paper you are handing back a mark you could have guessed at.</p>';
   if(pp.timedOut)h+='<p style="color:var(--bad)"><strong>Time ran out.</strong> '+S.blank.length+' question'+(S.blank.length===1?'':'s')+' never got an answer. On the real paper, watch the clock at the halfway mark.</p>';
   if(pp.pausedMin)h+='<p style="color:var(--ink-3)">Paused for about '+pp.pausedMin+' minute'+(pp.pausedMin===1?'':'s')+'. That time is not counted against you here, but on the real test a long pause closes the session.</p>';
   return h;
