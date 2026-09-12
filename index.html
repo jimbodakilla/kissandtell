@@ -3988,7 +3988,11 @@ const DECKS={
   ela:[{id:'V',name:'Vocabulary'},{id:'RPP',name:'Prose &amp; Poetry'},{id:'RIT',name:'Informational Text'},{id:'AG',name:'Across Genres'},{id:'mix',name:'Full Mix'},{id:'rmock',name:'Mock PM',cls:'mock'},{id:'papers',name:'Review Papers',cls:'six'},{id:'testweek',name:'5-Day Plan',cls:'six'}]
 };
 function deckBenchmarks(){
-  if(deck==='misses')return (missDeck?missDeck.codes:[]).map(c=>ALLB[c]).filter(Boolean);
+  if(deck==='misses'){
+    const own=(missDeck?missDeck.codes:[]).map(c=>ALLB[c]).filter(Boolean);
+    const pg=(missDeck&&missDeck.bm&&missDeck.bm.length)?passagesFor(missDeck.bm).map(id=>ALLB['P.'+id]).filter(Boolean):[];
+    return own.concat(pg);
+  }
   if(deck==='papers')return [];
   if(subject==='math'){
     if(deck==='six')return SIX.map(c=>ALLB[c]);
@@ -4116,6 +4120,7 @@ function renderLedger(){
   if(deck==='papers'){ el('mEyebrow').innerHTML='FAST &middot; Mock paper review';
     el('mSub').innerHTML='Every mock he has finished, question by question &mdash; what he answered, what the answer was, and how long each one took.'; return; }
   if(deck==='misses'){ el('mEyebrow').innerHTML='FAST &middot; My Misses';
+    el('tSecured').textContent=((missDeck&&missDeck.codes.length)||0)+((missDeck&&missDeck.bm&&missDeck.bm.length)||0)+' skills';
     el('mSub').innerHTML=(missDeck&&missDeck.why?missDeck.why+'. ':'')+'Fresh questions on exactly the benchmarks the paper says he missed.'; return; }
   el('mSub').innerHTML= deck==='six'
     ? 'Six benchmarks missed on a Grade 6 PM1 paper. Point this at whichever six matter for your student.'
@@ -4215,8 +4220,13 @@ function startPassage(p){
   if(!activePassage||activePassage.id!==p.id){
     activePassage=p; passageIdx=0; passageRight=0;
     const st=bst('P.'+p.id); if(!st.done)st.done=[];
-    let left=p.items.map((_,i)=>i).filter(i=>st.done.indexOf(i)<0);
-    if(!left.length){ st.done=[]; left=p.items.map((_,i)=>i); }
+    let pool=p.items.map((_,i)=>i);
+    if(deck==='misses'&&missDeck&&missDeck.bm&&missDeck.bm.length){   // only the skills the paper says he missed
+      const only=pool.filter(i=>missDeck.bm.indexOf(p.items[i].bm)>=0);
+      if(only.length)pool=only;
+    }
+    let left=pool.filter(i=>st.done.indexOf(i)<0);
+    if(!left.length){ st.done=st.done.filter(i=>pool.indexOf(i)<0); left=pool; }
     passageQueue=SH(left);
     renderPassage(p);
   }
@@ -5071,6 +5081,12 @@ function buildMock(){
     resp:[],flags:[],strike:[],notes:[],phase:'test',visits:0,pausedAt:null,pausedMs:0,spent:[],seen:[],start:Date.now(),dur:45*60*1000};
   mock.phase='brief';
 }
+const ELA_NAMES={
+  'ELA.6.R.1.1':'Literary elements','ELA.6.R.1.2':'Theme','ELA.6.R.1.3':'Perspective &amp; point of view',
+  'ELA.6.R.1.4':'Poetry','ELA.6.R.2.1':'Text structure','ELA.6.R.2.2':'Central idea',
+  'ELA.6.R.2.3':'Purpose &amp; perspective','ELA.6.R.2.4':'Argument &amp; evidence',
+  'ELA.6.R.3.1':'Figurative language','ELA.6.R.3.3':'Comparing texts','ELA.6.R.3.4':'Rhetoric',
+  'ELA.6.V.1.2':'Morphology','ELA.6.V.1.3':'Context &amp; connotation'};
 const ELA_GROUP=bm=>!bm?'AGV':(bm.indexOf('ELA.6.V')===0?'AGV':bm.split('.')[3]==='1'?'RPP':bm.split('.')[3]==='2'?'RIT':'AGV');
 function buildRMock(){
   // Sampled to the published FAST Grade 6 Reading blueprint, measured by BENCHMARK group:
@@ -5414,6 +5430,12 @@ function toggleFormula(){
 function toggleHighlight(){
   mock.hlOn=!mock.hlOn;
   const b=el('tdsHl'); if(b)b.classList.toggle('on',mock.hlOn);
+  wireHighlight();
+}
+/* renderPassage rebuilds #pbody, which throws the handler away.
+   Re-wire it every time a passage is drawn, or the highlighter dies on passage two. */
+function wireHighlight(){
+  if(!mock)return;
   const pane=el('pbody'); if(!pane)return;
   pane.style.cursor=mock.hlOn?'text':'';
   pane.onmouseup=pane.ontouchend=()=>{
@@ -5435,9 +5457,11 @@ function renderMock(){
   const it=mock.qs[mock.idx];
   if(it.p){
     curB=ALLB['P.'+it.p.id];
-    if(!activePassage||activePassage.id!==it.p.id){ activePassage=it.p; renderPassage(it.p); }
+    if(!activePassage||activePassage.id!==it.p.id){ activePassage=it.p; renderPassage(it.p); wireHighlight(); }
     el('passagePanel').hidden=false;
-    cur=passageItemToCur(it.p,it.i);
+    // build ONCE and keep it: passageItemToCur reshuffles the options every call,
+    // so rebuilding here would move the answer out from under a saved response
+    cur=it.q||(it.q=passageItemToCur(it.p,it.i));
   } else {
     curB=it.b; cur=it.q; el('passagePanel').hidden=true;
     document.querySelector('main').classList.remove('reading'); activePassage=null;
@@ -5551,6 +5575,16 @@ function answerText(I,v,wantKey){
   }catch(e){}
   return wantKey?'':(v==null?'':plain(typeof v==='object'?JSON.stringify(v):v));
 }
+function itemStemText(c){
+  const I=c&&c.input, base=plain((c&&c.stem)||'');
+  if(I&&I.kind==='twopart')
+    return (base?base+' ':'')+'Part A: '+plain(I.A.q)+'  Part B: '+plain(I.B.q);
+  if(I&&I.kind==='inline'&&!base)
+    return I.parts.map(pt=>typeof pt==='string'?plain(pt):'____').join(' ');
+  if(I&&I.kind==='table'&&!base)
+    return plain(I.rowHead||'')+' '+I.rows.map(r=>plain(r.label)).join('; ');
+  return base;
+}
 function applyResp(I,v){
   picked=null;multiPick=[];orderPick=[];plotPick=null;pointPick=null;cmpPick=null;
   ineqPick={k:null,closed:true,dir:'right'};twoPick={A:null,B:null};inlinePick=[];tablePick=[];
@@ -5572,7 +5606,7 @@ function gradeMock(){
   for(let i=0;i<mock.qs.length;i++){
     mock.idx=i;
     const it=mock.qs[i];
-    if(it.p){ curB=ALLB['P.'+it.p.id]; activePassage=it.p; cur=passageItemToCur(it.p,it.i); }
+    if(it.p){ curB=ALLB['P.'+it.p.id]; activePassage=it.p; cur=it.q||(it.q=passageItemToCur(it.p,it.i)); }
     else { curB=it.b; cur=it.q; }
     const r=mock.resp[i]||{}, I=cur.input;
     const same=r.kind===I.kind;
@@ -5589,7 +5623,7 @@ function gradeMock(){
     applyResp(I,same?r.v:null);
     const bm=it.p?(it.p.items[it.i].bm||curB.code):curB.code;
     mock.ans.push({
-      n:i+1, code:bm, short:curB.short, ok,
+      n:i+1, code:bm, short:(it.p&&ELA_NAMES[bm])?ELA_NAMES[bm]:curB.short, ok,
       answered:!!(r.v!==undefined&&r.v!==null&&r.done),
       flagged:!!mock.flags[i],
       sec:Math.round((mock.spent[i]||0)/1000),
@@ -5598,7 +5632,7 @@ function gradeMock(){
       firstOk,
       note:(mock.notes[i]||'').slice(0,300),
       passage:it.p?it.p.title:null,
-      stem:plain(cur.stem).slice(0,400),
+      stem:itemStemText(cur).slice(0,400),
       yours:same?answerText(I,r.v,false):'',
       key:answerText(I,null,true)
     });
@@ -5907,12 +5941,17 @@ function renderOnePaper(pp){
     ST.papers=(ST.papers||[]).filter(x=>x.id!==pp.id); save(); openPaper=null; renderPapers(); };
 }
 /* practise exactly what a paper showed he missed */
+function passagesFor(bms){
+  return [...new Set(PASSAGES.filter(p=>p.items.some(it=>bms.indexOf(it.bm)>=0)).map(p=>p.id))];
+}
 function startMissDrill(codes,why){
-  const known=codes.filter(c=>ALLB[c]);
-  if(!known.length){ alert('Those questions came from passages rather than single benchmarks, so there is nothing to rebuild a deck from.'); return; }
-  missDeck={codes:known,why};
-  subject=known.every(c=>c.indexOf('ELA')===0)?'ela':'math';
+  const known=codes.filter(c=>ALLB[c]);                       // benchmarks with their own generator
+  const bm=codes.filter(c=>!ALLB[c]&&ELA_NAMES[c]&&passagesFor([c]).length);  // reading skills that live on passages
+  if(!known.length&&!bm.length){ alert('There is nothing to rebuild a deck from for those questions.'); return; }
+  missDeck={codes:known,bm,why};
+  subject=(known.concat(bm)).every(c=>c.indexOf('ELA')===0)?'ela':'math';
   deck='misses'; openPaper=null; mock=null; plan=null; dayRun=null;
+  activePassage=null; passageQueue=[]; passageIdx=0;   // force the question queue to rebuild under the filter
   renderNav(); nextItem();
 }
 
