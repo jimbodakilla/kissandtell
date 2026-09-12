@@ -254,7 +254,8 @@ td .bcode{font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--ink
 .state.act{border-color:var(--accent-line);color:var(--accent);background:var(--accent-soft)}
 .tablescroll{overflow-x:auto}
 footer{margin-top:36px;padding-top:16px;border-top:1px solid var(--line);color:var(--ink-3);font-size:12.5px;display:flex;gap:16px;flex-wrap:wrap;align-items:center}
-footer button{background:none;border:0;color:var(--ink-3);font:inherit;font-size:12.5px;cursor:pointer;text-decoration:underline;text-underline-offset:3px;padding:0}
+footer button{background:none;border:0;color:var(--ink-3);font:inherit;font-size:12.5px;cursor:pointer;
+  text-decoration:underline;text-underline-offset:3px;padding:7px 2px;min-height:32px}
 footer button:hover{color:var(--bad)}
 
 /* ---------- mock: the real test's chrome ---------- */
@@ -575,6 +576,7 @@ table.matrix .mcell{text-align:center;vertical-align:middle}
   .deck{min-height:38px}
   button.btn{min-height:46px}
   .passage-toggle{padding:12px 22px}
+  footer button{padding:11px 4px;min-height:44px}
 }
 </style>
 </head>
@@ -3382,7 +3384,7 @@ const PASSAGES=[
    s:['Lines 1&ndash;8 set out the problem: the boundary will not hold still. Line 9 opens with <strong>&ldquo;So&rdquo;</strong>, which signals a consequence.',
       'What follows is the speaker&rsquo;s action &mdash; he files a line <em>and</em> a note admitting its limits. The note is the whole point of the turn, which is why it is the supporting evidence.',
       'In an English sonnet this shift often arrives at line 9. Knowing that gives you somewhere to look before you have read a word.']},
-  {bm:'ELA.6.R.3.1',q:'&ldquo;I found two different countries in the land&rdquo; is figurative. What does it mean?',
+  {bm:'ELA.6.R.3.1',q:'&ldquo;and found two different countries in the land&rdquo; is figurative. What does it mean?',
    o:['The same ground was so changed by the tide that it was effectively two different places.',
       'The boundary he had been sent to mark ran between two separate nations.',
       'He discovered that the stretch of land in question already belonged to somebody else entirely.',
@@ -4409,8 +4411,8 @@ const PASSAGES=[
    qB:'Which sentence states the problem those methods solve?',
    oB:['&ldquo;Stars alone would not be enough, because they are invisible under cloud and useless by day.&rdquo;',
        '&ldquo;There are no instruments.&rdquo;',
-       '&ldquo;Both are precise.&rdquo;',
-       '&ldquo;A chart survives its maker; a star compass does not, unless it is taught to somebody who will hold it.&rdquo;'],
+       '&ldquo;The difference is not that one system is precise and the other approximate. Both are precise.&rdquo;',
+       '&ldquo;A chart survives its maker; a star compass does not, unless it is taught.&rdquo;'],
    cB:0,
    h:'Look for a sentence containing the word <em>because</em> near the start of a paragraph.',
    s:['The paragraph opens by naming the gap: stars fail under cloud and in daylight.',
@@ -4841,8 +4843,8 @@ const EXTRA_ITEMS=[
   {bm:'ELA.6.R.3.4',q:'Select the sentence from <strong>Passage 2</strong> in which the author appeals most directly to the reader&rsquo;s sense of <strong>fairness</strong>.',
    o:['&ldquo;What is disputed is whether a later bell is the cheapest way to buy the sleep, and whether the bill falls on the families least able to pay it.&rdquo;',
       '&ldquo;Most districts run each bus on two or three routes, staggering elementary and secondary start times so that one fleet does the work of two.&rdquo;',
-      '&ldquo;Later dismissal compresses after-school athletics, which for some students is the only reliable supervised time of the day.&rdquo;',
-      '&ldquo;School start times are not a single lever; they are one gear in a machine, and the knock-on effects run past transport.&rdquo;'],c:0,
+      '&ldquo;Later dismissal compresses after-school athletics, which for some students is the only reliable supervised time between the last bell and a parent&rsquo;s return from work.&rdquo;',
+      '&ldquo;Push the secondary bell later and either the elementary bell moves earlier &mdash; handing the problem to younger children, who wake early anyway &mdash; or the district buys more buses.&rdquo;'],c:0,
    h:'Three of these are descriptions of how something works. One makes a judgement about who ends up carrying the burden.',
    s:['&ldquo;whether the bill falls on the families least able to pay it&rdquo; is not a logistical fact &mdash; it is a moral claim about who bears a cost.',
       'The other three are mechanism: routes, dismissal times, the gear metaphor. They serve the argument but they appeal to reason, not to fairness.',
@@ -5177,16 +5179,26 @@ function validQ(q){
   if(I.kind==='frac'&&(!I.answer||!isFinite(I.answer.n)||!I.answer.d))return false;
   return true;
 }
+/* A student who cannot do the maths can still beat a paper by picking the longest
+   option, so prefer a draw where the key is not the longest. Purely a preference:
+   if none turns up we take the first valid item rather than fail. */
+function keyIsLongest(q){
+  const I=q&&q.input; if(!I||I.kind!=='mc'||!I.options)return false;
+  const L=I.options.map(o=>plain(o).length);
+  const mx=Math.max.apply(null,L);
+  return L[I.correct]===mx && L.filter(x=>x===mx).length===1;
+}
 function makeQ(b,tier){
-  let last=null;
+  let last=null, fallback=null;
   for(let i=0;i<50;i++){
     let q; try{ q=b.gen(i<40?tier:1); }catch(e){ continue; }
     last=q||last;
     if(!validQ(q))continue;
     if(q.input.traps)q.input.traps=q.input.traps.filter(t=>t&&t.v!==null&&t.v!==undefined&&isFinite(t.v)&&Math.abs(t.v-q.input.answer)>1e-9);
+    if(i<12&&keyIsLongest(q)){ fallback=fallback||q; continue; }   // try again for a less obvious draw
     return q;
   }
-  return last;
+  return fallback||last;
 }
 function deckComplete(){
   const bs=deckBenchmarks();
@@ -5928,7 +5940,7 @@ function renderPlanHub(){
   const sug=suggestedDay(), left=daysToTest();
   el('answer').innerHTML=
     '<div class="planwhen"><label for="testWhen">When is the test?</label>'+
-      '<input type="date" id="testWhen" value="'+(ST.testDate||'')+'">'+
+      '<input type="date" id="testWhen" aria-label="Date of the test" value="'+(ST.testDate||'')+'">'+
       (left===null?'<span class="planleft">Set the date and this plan will pace itself.</span>'
        :left<0?'<span class="planleft">That date has passed. Change it, or keep using these decks for PM2.</span>'
        :'<span class="planleft'+(left<=2?' urgent':'')+'">'+(left===0?'The test is <strong>today</strong>.'
@@ -6729,11 +6741,14 @@ const ENT={'&amp;':'&','&lt;':'<','&gt;':'>','&quot;':'"','&nbsp;':' ','&middot;
 function plain(h){
   return String(h==null?'':h)
     .replace(/<sup>([^<]*)<\/sup>/g,'^$1')
-    .replace(/<span class="fr"[^>]*><span[^>]*>([^<]*)<\/span><span[^>]*>([^<]*)<\/span><\/span>/g,'$1/$2')
+    .replace(/<span class="fr"[^>]*>\s*<i>([^<]*)<\/i>\s*<b>([^<]*)<\/b>\s*<\/span>/g,' $1/$2 ')
+    .replace(/<span class="fr"[^>]*><span[^>]*>([^<]*)<\/span><span[^>]*>([^<]*)<\/span><\/span>/g,' $1/$2 ')
     .replace(/<[^>]*>/g,' ')
     .replace(/&#(\d+);/g,(m,d)=>String.fromCharCode(+d))
     .replace(/&[a-z]+;/g,m=>ENT[m]!==undefined?ENT[m]:m)
-    .replace(/\s+/g,' ').trim();
+    .replace(/\s+/g,' ')
+    .replace(/([\u2212-])\s+(?=[\d(])/g,'$1')      // keep a sign attached to what it negates
+    .trim();
 }
 function fracText(f){ return f&&typeof f==='object'&&'n' in f?(f.d===1?String(f.n):f.n+'/'+f.d):String(f); }
 /* v is a stored response value; pass null to describe the correct answer instead */
