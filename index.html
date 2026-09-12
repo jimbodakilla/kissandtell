@@ -245,6 +245,42 @@ footer{margin-top:36px;padding-top:16px;border-top:1px solid var(--line);color:v
 footer button{background:none;border:0;color:var(--ink-3);font:inherit;font-size:12.5px;cursor:pointer;text-decoration:underline;text-underline-offset:3px;padding:0}
 footer button:hover{color:var(--bad)}
 
+/* ---------- mock: the real test's chrome ---------- */
+.tdsbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:18px 0 0;padding:12px 0 0;border-top:1px solid var(--line)}
+.tdsgrow{flex:1 1 auto}
+button.tds{font:inherit;font-size:14px;font-weight:600;cursor:pointer;background:var(--paper);color:var(--ink);
+  border:1px solid var(--line);border-radius:var(--r);padding:9px 15px;min-height:42px}
+button.tds:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+button.tds:disabled{opacity:.4;cursor:default}
+button.tds.sum{font-family:"IBM Plex Mono",monospace;font-size:12.5px;letter-spacing:.04em}
+button.tds.tool{font-size:13px;padding:9px 12px;color:var(--ink-2)}
+button.tds.tool.on{background:var(--accent);border-color:var(--accent);color:var(--paper)}
+.tdsdrop{margin-top:10px;padding:12px;background:var(--paper-2);border:1px solid var(--line);border-radius:var(--r)}
+.tdsgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(54px,1fr));gap:8px}
+.tdsgrid.big{grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:10px;margin-top:18px}
+button.tdsq{position:relative;font-family:"IBM Plex Mono",monospace;font-size:15px;font-weight:600;cursor:pointer;
+  min-height:50px;background:var(--paper);color:var(--ink-3);border:1px solid var(--line);border-radius:var(--r)}
+button.tdsq.done{color:var(--ink);border-color:var(--accent-line);background:var(--accent-soft)}
+button.tdsq.cur{outline:2px solid var(--accent);outline-offset:1px}
+button.tdsq:hover{border-color:var(--accent)}
+button.tdsq .fl{position:absolute;top:2px;right:4px;font-size:11px;color:var(--bronze)}
+button.tdsq .wn{position:absolute;bottom:1px;right:5px;font-size:12px;font-weight:700;color:var(--bad)}
+.tdslegend{margin-top:9px;font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink-3)}
+table.review{min-width:560px}
+table.review td{vertical-align:top}
+.rvstem{font-size:12.5px;color:var(--ink-2);margin-top:4px;max-width:52ch;line-height:1.45}
+.rvans{font-size:13px}
+@media(max-width:620px){ .rvstem{display:none} table.review{min-width:470px} }
+.tdsnotes{margin-top:12px}
+.tdsnotes label{display:block;font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--ink-3);margin-bottom:5px}
+.tdsnotes textarea{width:100%;font:inherit;font-size:14px;padding:10px;background:var(--paper);
+  color:var(--ink);border:1px solid var(--line);border-radius:var(--r);resize:vertical}
+.opt.struck span:last-child,.chip.struck{text-decoration:line-through;opacity:.5}
+#answer.strikemode .opt{cursor:crosshair}
+.hlmark{border-radius:3px;padding:0 1px;color:#12232E}
+
 /* ---------- svg figure styling ---------- */
 svg .face{fill:var(--accent-soft);stroke:var(--ink);stroke-width:1.6;stroke-linejoin:round}
 svg .hole{fill:var(--paper-2);stroke:var(--ink);stroke-width:1.6;stroke-linejoin:round}
@@ -3901,10 +3937,12 @@ let subject='math', deck='six', cur=null, curB=null, answered=false, picked=null
 const DECKS={
   math:[{id:'six',name:'Target Six',cls:'six',codes:SIX},
         {id:'NSO',name:'Number Sense'},{id:'AR',name:'Algebraic Reasoning'},{id:'GRDP',name:'Geometry &amp; Data'},
-        {id:'mix',name:'Full Mix'},{id:'G7',name:'Above Grade'},{id:'mock',name:'Mock PM',cls:'mock'}],
-  ela:[{id:'V',name:'Vocabulary'},{id:'RPP',name:'Prose &amp; Poetry'},{id:'RIT',name:'Informational Text'},{id:'AG',name:'Across Genres'},{id:'mix',name:'Full Mix'},{id:'rmock',name:'Mock PM',cls:'mock'},{id:'testweek',name:'5-Day Plan',cls:'six'}]
+        {id:'mix',name:'Full Mix'},{id:'G7',name:'Above Grade'},{id:'mock',name:'Mock PM',cls:'mock'},{id:'papers',name:'Review Papers',cls:'six'}],
+  ela:[{id:'V',name:'Vocabulary'},{id:'RPP',name:'Prose &amp; Poetry'},{id:'RIT',name:'Informational Text'},{id:'AG',name:'Across Genres'},{id:'mix',name:'Full Mix'},{id:'rmock',name:'Mock PM',cls:'mock'},{id:'papers',name:'Review Papers',cls:'six'},{id:'testweek',name:'5-Day Plan',cls:'six'}]
 };
 function deckBenchmarks(){
+  if(deck==='misses')return (missDeck?missDeck.codes:[]).map(c=>ALLB[c]).filter(Boolean);
+  if(deck==='papers')return [];
   if(subject==='math'){
     if(deck==='six')return SIX.map(c=>ALLB[c]);
     if(deck==='mix'||deck==='mock')return MATH_CATS.filter(c=>c.id!=='G7').flatMap(c=>c.bs);
@@ -3980,6 +4018,7 @@ function renderNav(){
   REG.forEach(s=>{ h+='<button class="sub-tab" role="tab" data-subject="'+s.id+'" aria-selected="'+(s.id===subject)+'">'+s.name+'</button>'; });
   h+='</div><div class="decks">';
   DECKS[subject].forEach(d=>{ h+='<button class="deck '+(d.cls||'')+'" data-deck="'+d.id+'" aria-current="'+(d.id===deck)+'">'+d.name+'</button>'; });
+  if(missDeck&&missDeck.codes.length)h+='<button class="deck six" data-deck="misses" aria-current="'+(deck==='misses')+'">My Misses ('+missDeck.codes.length+')</button>';
   h+='</div><nav class="rail" id="rail" aria-label="Benchmarks"></nav>';
   el('nav').innerHTML=h;
   el('nav').querySelectorAll('.sub-tab').forEach(b=>b.onclick=()=>{subject=b.dataset.subject;deck=subject==='ela'?'testweek':DECKS[subject][0].id;activePassage=null;renderNav();nextItem();});
@@ -3988,6 +4027,7 @@ function renderNav(){
 }
 function renderRail(){
   const all=deckBenchmarks(), r=el('rail'); if(!r)return;
+  if(deck==='papers'){ r.style.display='none'; r.innerHTML=''; return; }
   let bs=all;
   if(all.length>8){                                   // rank by need, keep the current one visible
     const score=b=>{const q=bst(b.code);return (q.secured?100:0)+(q.tried?q.right/q.tried:0.4)*10+(curB&&curB.code===b.code?-99:0);};
@@ -4006,6 +4046,7 @@ function renderRail(){
 }
 function renderLedger(){
   const bs=deckBenchmarks();
+  if(deck==='papers'){ el('ledgerBody').innerHTML=''; }
   el('ledgerBody').innerHTML=bs.map(b=>{
     const s=bst(b.code), acc=s.tried?Math.round(s.right/s.tried*100):null;
     const prog=s.secured?100:Math.min(100,Math.round(((s.tier-1)*2+Math.min(s.streak,s.tier===3?4:2))/8*100));
@@ -4017,12 +4058,18 @@ function renderLedger(){
       '<td><div class="bar"><i class="'+(s.secured?'done':'')+'" style="width:'+prog+'%"></i></div></td>'+
       '<td><span class="state'+(s.secured?' sec':(curB&&curB.code===b.code?' act':''))+'">'+(s.secured?'Secured':s.tried?'In progress':'Untouched')+'</span></td></tr>';
   }).join('');
-  el('tSecured').textContent=bs.filter(b=>bst(b.code).secured).length+'/'+bs.length;
+  if(deck==='papers'){ const all=Object.keys(ALLB);
+    el('tSecured').textContent=all.filter(c=>bst(c).secured).length+'/'+all.length; }
+  else el('tSecured').textContent=bs.filter(b=>bst(b.code).secured).length+'/'+bs.length;
   el('tStreak').textContent=ST.session.streak;
   el('tBest').textContent=ST.session.best;
   el('tAcc').textContent=ST.session.tried;            // effort, not accuracy, on the student's screen
   const dk=(DECKS[subject].find(d=>d.id===deck)||{}).name||'';
   el('mEyebrow').innerHTML='FAST '+(subject==='math'?'Grade 6 Mathematics':'Grade 6 ELA Reading')+' &middot; '+dk.replace(/&amp;/g,'&');
+  if(deck==='papers'){ el('mEyebrow').innerHTML='FAST &middot; Mock paper review';
+    el('mSub').innerHTML='Every mock he has finished, question by question &mdash; what he answered, what the answer was, and how long each one took.'; return; }
+  if(deck==='misses'){ el('mEyebrow').innerHTML='FAST &middot; My Misses';
+    el('mSub').innerHTML=(missDeck&&missDeck.why?missDeck.why+'. ':'')+'Fresh questions on exactly the benchmarks the paper says he missed.'; return; }
   el('mSub').innerHTML= deck==='six'
     ? 'Six benchmarks missed on a Grade 6 PM1 paper. Point this at whichever six matter for your student.'
     : subject==='math'
@@ -4103,6 +4150,7 @@ function deckComplete(){
   el('switchBtn').onclick=()=>{ deckDone=true; document.querySelector('.decks').scrollIntoView({block:'center',behavior:'smooth'}); };
 }
 function nextItem(force){
+  if(deck==='papers'){ if(mock){mock=null; if(mockTimer)clearInterval(mockTimer);} renderPapers(); renderRail(); renderLedger(); return; }
   if(deck==='mock'&&subject==='math'){ if(!mock)buildMock(); return renderMock(); }
   if(deck==='rmock'&&subject==='ela'){ if(!mock)buildRMock(); return renderMock(); }
   if(deck==='testweek'&&subject==='ela'){ if(!plan)planStart(); return; }
@@ -4360,7 +4408,7 @@ function complete(){ const I=cur.input;
 
 /* ---------- check + verdict ---------- */
 function check(){
-  if(mock&&(deck==='mock'||deck==='rmock')&&(!plan||plan.stage==='mock')){ mockAdvance(); return; }
+  if(mock&&(deck==='mock'||deck==='rmock')&&(!plan||plan.stage==='mock')){ return; }
   if(plan&&answered&&(plan.stage==='warmup'||plan.stage==='second')){
     if(plan.stage==='warmup'){ plan.wi++; planServeWarm(); } else { plan.si++; planServeSecond(); }
     return;
@@ -4762,13 +4810,9 @@ let mock=null, mockTimer=null;
 function buildMock(){
   const bs=MATH_CATS.filter(c=>c.id!=='G7').flatMap(c=>c.bs);
   const picked=SH(bs).slice(0,30);
-  mock={reading:false,qs:picked.map(b=>({b,q:makeQ(b,Math.random()<.6?3:2)})),idx:0,ans:[],start:Date.now(),dur:45*60*1000};
-  if(mockTimer)clearInterval(mockTimer);
-  mockTimer=setInterval(()=>{ if(!mock){clearInterval(mockTimer);return;}
-    const left=mock.dur-(Date.now()-mock.start);
-    if(left<=0){ clearInterval(mockTimer); finishMock(); return; }
-    el('tAcc').textContent=Math.floor(left/60000)+':'+String(Math.floor(left/1000)%60).padStart(2,'0');
-  },1000);
+  mock={reading:false,qs:picked.map(b=>({b,q:makeQ(b,Math.random()<.6?3:2)})),idx:0,ans:[],
+    resp:[],flags:[],strike:[],notes:[],phase:'test',visits:0,pausedAt:null,pausedMs:0,spent:[],seen:[],start:Date.now(),dur:45*60*1000};
+  startMockTimer();
 }
 const ELA_GROUP=bm=>!bm?'AGV':(bm.indexOf('ELA.6.V')===0?'AGV':bm.split('.')[3]==='1'?'RPP':bm.split('.')[3]==='2'?'RIT':'AGV');
 function buildRMock(){
@@ -4794,47 +4838,391 @@ function buildRMock(){
   }
   const vblock=[]; for(let i=0;i<best.vN;i++){ const b=PK(vb); vblock.push({b,q:makeQ(b,Math.random()<.6?3:2)}); }
   const all=SH(best.blocks.concat([vblock])).flat().slice(0,N);
-  mock={reading:true,qs:all,idx:0,ans:[],start:Date.now(),dur:90*60*1000};
+  mock={reading:true,qs:all,idx:0,ans:[],resp:[],flags:[],strike:[],notes:[],phase:'test',visits:0,pausedAt:null,pausedMs:0,spent:[],seen:[],start:Date.now(),dur:90*60*1000};
+  startMockTimer();
+}
+/* One clock for both papers. Pausing freezes it by shifting mock.start on resume,
+   so every elapsed-time calculation downstream stays honest. */
+const fmtClock=ms=>{ const t=Math.max(0,ms);
+  return Math.floor(t/60000)+':'+String(Math.floor(t/1000)%60).padStart(2,'0'); };
+function mockLeft(){ return mock.dur-((mock.pausedAt||Date.now())-mock.start); }
+function startMockTimer(){
   if(mockTimer)clearInterval(mockTimer);
-  mockTimer=setInterval(()=>{ if(!mock){clearInterval(mockTimer);return;}
+  mockTimer=setInterval(()=>{
+    if(!mock){ clearInterval(mockTimer); mockTimer=null; return; }
+    if(mock.pausedAt)return;                          // clock stopped, display frozen
     const left=mock.dur-(Date.now()-mock.start);
-    if(left<=0){ clearInterval(mockTimer); finishMock(); return; }
-    el('tAcc').textContent=Math.floor(left/60000)+':'+String(Math.floor(left/1000)%60).padStart(2,'0');
-    const used=(Date.now()-mock.start)/mock.dur, done=mock.idx/mock.qs.length;
-    const t=el('tStreak'); if(t){ const d=Math.round((done-used)*mock.qs.length);
-      t.textContent=(d>0?'+':'')+d; t.style.color=d<-2?'var(--bad)':d>2?'var(--good)':'var(--ink)'; }
+    if(left<=0){ clearInterval(mockTimer); mockTimer=null;
+      leaveItem(); if(mock.phase==='test')captureResp();
+      mock.timedOut=true; gradeMock(); return; }
+    el('tAcc').textContent=fmtClock(left);
+    if(mock.reading){
+      const used=(Date.now()-mock.start)/mock.dur, done=mock.idx/mock.qs.length;
+      const t=el('tStreak'); if(t){ const d=Math.round((done-used)*mock.qs.length);
+        t.textContent=(d>0?'+':'')+d; t.style.color=d<-2?'var(--bad)':d>2?'var(--good)':'var(--ink)'; }
+    }
   },1000);
+}
+function pauseMock(){
+  if(!mock||mock.phase!=='test')return;
+  captureResp();
+  mock.pausedAt=Date.now(); mock.phase='paused';
+  el('passagePanel').hidden=true;
+  const bar=el('mockbar'); if(bar)bar.hidden=true;
+  const drop=el('tdsDrop'); if(drop)drop.classList.add('hide');
+  const done=mock.qs.filter((q,i)=>mock.resp[i]&&mock.resp[i].done).length;
+  el('pCode').innerHTML='MOCK PM'; el('pName').innerHTML='Paused'; el('pTier').innerHTML='the clock is stopped';
+  el('figure').innerHTML=''; el('hintSlot').innerHTML=''; el('verdict').innerHTML='';
+  el('stem').innerHTML='<strong style="font-size:1.15em">The test is paused.</strong>'+
+    '<div class="qnote">Every answer so far is saved and the questions are hidden until you come back. '+
+    'On the real FAST a pause longer than <strong>20 minutes</strong> closes the session and a test administrator has to reopen it, so keep the break short.</div>';
+  el('answer').innerHTML='<div class="tdsbar">'+
+    '<button class="tds" id="tdsResume">&#9654; Resume test</button>'+
+    '<span class="tdsgrow"></span>'+
+    '<span class="tdslegend">'+fmtClock(mockLeft())+' left &nbsp;&middot;&nbsp; on question '+(mock.idx+1)+' of '+mock.qs.length+
+    ' &nbsp;&middot;&nbsp; '+done+' answered</span></div>';
+  el('tdsResume').onclick=resumeMock;
+  el('tdsResume').focus();
+}
+function resumeMock(){
+  if(!mock||mock.phase!=='paused')return;
+  mock.pausedMs=(mock.pausedMs||0)+(Date.now()-mock.pausedAt);
+  mock.start+=Date.now()-mock.pausedAt;             // shift the start so elapsed time excludes the break
+  mock.pausedAt=null; mock.phase='test';
+  const bar=el('mockbar'); if(bar)bar.hidden=false;
+  renderMock();
+}
+function mockResp(){ return mock.resp[mock.idx]||(mock.resp[mock.idx]={}); }
+/* Every departure from an item runs through captureResp, so this is where the
+   clock for that item stops and where a changed answer gets noticed. */
+function leaveItem(){
+  if(!mock||mock.itemT0==null)return;
+  const i=mock.idx;
+  mock.spent[i]=(mock.spent[i]||0)+(Date.now()-mock.itemT0);
+  mock.itemT0=null;
+}
+function serialResp(r){ try{return JSON.stringify(r.v===undefined?null:r.v);}catch(e){return '';} }
+function captureResp(){
+  const I=cur&&cur.input; if(!I)return;
+  const r=mockResp(); r.kind=I.kind;
+  const before=r.done?serialResp(r):null;
+  if(I.kind==='mc')r.v=picked;
+  else if(I.kind==='multi')r.v=multiPick.slice();
+  else if(I.kind==='cmp')r.v=cmpPick;
+  else if(I.kind==='order')r.v=orderPick.slice();
+  else if(I.kind==='num'||I.kind==='frac')r.v=el('numIn')?el('numIn').value:'';
+  else if(I.kind==='plot')r.v=plotPick;
+  else if(I.kind==='point')r.v=pointPick?{x:pointPick.x,y:pointPick.y}:null;
+  else if(I.kind==='ineq')r.v={k:ineqPick.k,closed:ineqPick.closed,dir:ineqPick.dir};
+  else if(I.kind==='twopart')r.v={A:twoPick.A,B:twoPick.B};
+  else if(I.kind==='table')r.v=tablePick.slice();
+  else if(I.kind==='inline')r.v=inlinePick.slice();
+  r.done=mockAnswered();
+  if(before!==null&&r.done&&serialResp(r)!==before){
+    r.changed=(r.changed||0)+1;                  // he went back and moved off an answer he had already given
+  }
+  if(r.done&&r.first===undefined){ try{ r.first=JSON.parse(serialResp(r)); }catch(e){} }
+  leaveItem();
+}
+function mockAnswered(){ try{ return complete(); }catch(e){ return false; } }
+function restoreResp(){
+  const r=mock.resp[mock.idx]; if(!r||r.v===undefined||r.v===null)return;
+  const I=cur.input; if(r.kind!==I.kind)return;
+  if(I.kind==='mc'){ picked=r.v;
+    const b=el('answer').querySelectorAll('.opt')[picked]; if(b){b.setAttribute('aria-checked','true');b.classList.add('sel');} }
+  else if(I.kind==='multi'){ multiPick=r.v.slice();
+    el('answer').querySelectorAll('.opt').forEach((b,i)=>{ if(multiPick.indexOf(i)>=0)b.setAttribute('aria-pressed','true'); }); }
+  else if(I.kind==='cmp'){ cmpPick=r.v;
+    el('answer').querySelectorAll('.opt').forEach(b=>{ if(b.dataset.c===cmpPick)b.setAttribute('aria-pressed','true'); }); }
+  else if(I.kind==='order'){ orderPick=r.v.slice();
+    el('answer').querySelectorAll('.chip').forEach(c=>{ const k=orderPick.indexOf(+c.dataset.id);
+      if(k>=0){ c.classList.add('picked'); c.insertAdjacentHTML('beforeend','<span class="ord">'+(k+1)+'</span>'); } }); }
+  else if(I.kind==='num'||I.kind==='frac'){ if(el('numIn'))el('numIn').value=r.v; }
+  else if(I.kind==='plot'){ plotPick=r.v; redrawLine(); }
+  else if(I.kind==='point'){ pointPick=r.v?{x:r.v.x,y:r.v.y}:null; redrawGrid(); }
+  else if(I.kind==='ineq'){ ineqPick={k:r.v.k,closed:r.v.closed,dir:r.v.dir}; redrawIneq();
+    el('answer').querySelectorAll('.tog').forEach(b=>{ const on=b.dataset.t==='closed'?((b.dataset.v==='1')===ineqPick.closed):(b.dataset.v===ineqPick.dir);
+      b.setAttribute('aria-pressed',on); }); }
+  else if(I.kind==='twopart'){ twoPick={A:r.v.A,B:r.v.B};
+    ['A','B'].forEach(k=>{ if(twoPick[k]!==null&&twoPick[k]!==undefined){
+      const b=el('answer').querySelectorAll('.opt.p'+k)[twoPick[k]]; if(b){b.setAttribute('aria-checked','true');b.classList.add('sel');} } }); }
+  else if(I.kind==='table'){ tablePick=r.v.slice();
+    tablePick.forEach((c,ri)=>{ if(c===undefined||c===null)return;
+      const b=el('answer').querySelector('.tcell[data-r="'+ri+'"][data-c="'+c+'"]'); if(b)b.setAttribute('aria-pressed','true'); }); }
+  else if(I.kind==='inline'){ inlinePick=r.v.slice();
+    inlinePick.forEach((ci,pi)=>{ if(ci===undefined||ci===null)return;
+      const g=el('answer').querySelector('.inlinesel[data-g="'+pi+'"]'); if(!g)return;
+      const c=g.querySelectorAll('.ichip')[ci]; if(c)c.setAttribute('aria-pressed','true'); }); }
+}
+/* ---- the real test's controls: Back | Next | Flag, an item list, and tools ---- */
+function mockBar(){
+  const flagged=!!mock.flags[mock.idx];
+  const left=mock.qs.filter((q,i)=>!(mock.resp[i]&&mock.resp[i].done)).length;
+  let h='<div class="tdsbar">'+
+    '<button class="tds" id="tdsBack"'+(mock.idx===0?' disabled':'')+'>&#8592; Back</button>'+
+    '<button class="tds" id="tdsNext">'+(mock.idx===mock.qs.length-1?'Review &#8594;':'Next &#8594;')+'</button>'+
+    '<button class="tds sum" id="tdsSum">Question '+(mock.idx+1)+' of '+mock.qs.length+' &#9662;</button>'+
+    '<span class="tdsgrow"></span>'+
+    '<button class="tds tool'+(flagged?' on':'')+'" id="tdsFlag">&#9873; '+(flagged?'Flagged':'Flag')+'</button>'+
+    '<button class="tds tool'+(mock.strikeOn?' on':'')+'" id="tdsStrike">S&#822;t&#822;r&#822;i&#822;k&#822;e&#822;</button>'+
+    (mock.reading?'<button class="tds tool" id="tdsHl">&#9998; Highlight</button>':'')+
+    '<button class="tds tool" id="tdsNote">&#128221; Notes</button>'+
+    '<button class="tds tool" id="tdsZoom">&#128269; Zoom</button>'+
+    '<button class="tds tool" id="tdsPause">&#9208; Pause</button>'+
+    '</div>'+
+    '<div class="tdsdrop hide" id="tdsDrop"></div>';
+  return h;
+}
+function renderMockBar(){
+  const host=el('mockbar'); if(!host)return;
+  host.innerHTML=mockBar();
+  el('tdsBack').onclick=()=>mockGo(mock.idx-1);
+  el('tdsNext').onclick=()=>{ if(mock.idx===mock.qs.length-1){captureResp();mockReview();} else mockGo(mock.idx+1); };
+  el('tdsFlag').onclick=()=>{ mock.flags[mock.idx]=!mock.flags[mock.idx]; renderMockBar(); };
+  el('tdsStrike').onclick=()=>{ mock.strikeOn=!mock.strikeOn; renderMockBar(); applyStrikeMode(); };
+  el('tdsZoom').onclick=()=>{ mock.zoom=(mock.zoom||1)+.15; if(mock.zoom>1.65)mock.zoom=1;
+    document.querySelector('.plate').style.fontSize=(mock.zoom*100)+'%'; };
+  el('tdsNote').onclick=()=>toggleNotes();
+  el('tdsPause').onclick=()=>pauseMock();
+  if(el('tdsHl'))el('tdsHl').onclick=()=>toggleHighlight();
+  el('tdsSum').onclick=()=>{
+    const d=el('tdsDrop');
+    if(!d.classList.contains('hide')){ d.classList.add('hide'); return; }
+    d.innerHTML='<div class="tdsgrid">'+mock.qs.map((q,i)=>{
+      const done=mock.resp[i]&&mock.resp[i].done, fl=mock.flags[i];
+      return '<button class="tdsq'+(i===mock.idx?' cur':'')+(done?' done':'')+'" data-i="'+i+'">'+
+        (i+1)+(fl?'<span class="fl">&#9873;</span>':'')+(!done?'<span class="wn">!</span>':'')+'</button>';
+    }).join('')+'</div><div class="tdslegend">&#9873; flagged &nbsp;&middot;&nbsp; ! not answered</div>';
+    d.classList.remove('hide');
+    d.querySelectorAll('.tdsq').forEach(b=>b.onclick=()=>{ d.classList.add('hide'); mockGo(+b.dataset.i); });
+  };
+  applyStrikeMode();
+}
+function applyStrikeMode(){
+  const opts=el('answer').querySelectorAll('.opt,.chip');
+  opts.forEach((b,i)=>{
+    b.classList.toggle('struck',!!(mock.strike[mock.idx]&&mock.strike[mock.idx][i]));
+    b.oncontextmenu=e=>{ e.preventDefault(); toggleStrike(i,b); };
+  });
+  el('answer').classList.toggle('strikemode',!!mock.strikeOn);
+}
+function toggleStrike(i,b){
+  mock.strike[mock.idx]=mock.strike[mock.idx]||{};
+  mock.strike[mock.idx][i]=!mock.strike[mock.idx][i];
+  b.classList.toggle('struck',mock.strike[mock.idx][i]);
+}
+function toggleNotes(){
+  let n=el('tdsNotes');
+  if(n){ mock.notes[mock.idx]=n.querySelector('textarea').value; n.remove(); return; }
+  n=document.createElement('div'); n.id='tdsNotes'; n.className='tdsnotes';
+  n.innerHTML='<label>Notes for question '+(mock.idx+1)+'</label><textarea rows="5"></textarea>';
+  el('mockbar').appendChild(n);
+  n.querySelector('textarea').value=mock.notes[mock.idx]||'';
+  n.querySelector('textarea').oninput=e=>{ mock.notes[mock.idx]=e.target.value; };
+}
+function toggleHighlight(){
+  mock.hlOn=!mock.hlOn;
+  const b=el('tdsHl'); if(b)b.classList.toggle('on',mock.hlOn);
+  const pane=el('pbody'); if(!pane)return;
+  pane.style.cursor=mock.hlOn?'text':'';
+  pane.onmouseup=pane.ontouchend=()=>{
+    if(!mock.hlOn)return;
+    const sel=window.getSelection(); if(!sel||sel.isCollapsed)return;
+    try{ const r=sel.getRangeAt(0); const sp=document.createElement('span');
+      sp.className='hlmark'; sp.style.background=mock.hlColor||'#FFE9A8';
+      sp.appendChild(r.extractContents()); r.insertNode(sp); sel.removeAllRanges();
+    }catch(e){}
+  };
+}
+function mockGo(i){
+  if(i<0||i>=mock.qs.length)return;
+  captureResp();
+  mock.idx=i; mock.visits=(mock.visits||0)+1;
+  renderMock();
 }
 function renderMock(){
   const it=mock.qs[mock.idx];
-  if(it.p){                                   // a passage item inside the reading mock
+  if(it.p){
     curB=ALLB['P.'+it.p.id];
     if(!activePassage||activePassage.id!==it.p.id){ activePassage=it.p; renderPassage(it.p); }
     el('passagePanel').hidden=false;
     cur=passageItemToCur(it.p,it.i);
   } else {
-    curB=it.b; cur=it.q; el('passagePanel').hidden=true; activePassage=null;
+    curB=it.b; cur=it.q; el('passagePanel').hidden=true;
+    document.querySelector('main').classList.remove('reading'); activePassage=null;
   }
   answered=false;
   picked=null;multiPick=[];orderPick=[];plotPick=null;pointPick=null;cmpPick=null;ineqPick={k:null,closed:true,dir:'right'};twoPick={A:null,B:null};inlinePick=[];tablePick=[];
   el('verdict').innerHTML=''; el('hintSlot').innerHTML='';
   renderItem();
+  restoreResp();
+  mock.itemT0=Date.now(); mock.seen[mock.idx]=(mock.seen[mock.idx]||0)+1;
   const ks=el('kStreak'); if(ks)ks.textContent='Pace';
-  el('pCode').innerHTML=mock.reading?'MOCK PM &middot; READING':'MOCK PM'; el('pName').innerHTML='Question '+(mock.idx+1)+' of '+mock.qs.length;
-  el('pTier').innerHTML='no feedback until the end';
-  el('btnHint').disabled=true; el('btnSkip').disabled=false;
-  el('btnCheck').textContent=mock.idx===mock.qs.length-1?'Finish paper':'Next →';
+  el('pCode').innerHTML=mock.reading?'MOCK PM &middot; READING':'MOCK PM &middot; MATHEMATICS';
+  el('pName').innerHTML='';
+  el('pTier').innerHTML='answers are not shown until you end the test';
+  // the real test has no hint and no skip
+  el('btnCheck').hidden=true; el('btnHint').hidden=true; el('btnSkip').hidden=true;
+  el('kbdHint').innerHTML='';
+  if(!el('mockbar')){ const d=document.createElement('div'); d.id='mockbar';
+    el('answer').parentNode.insertBefore(d,el('verdict')); }
+  el('mockbar').hidden=false;
+  renderMockBar();
+  if(mock.zoom)document.querySelector('.plate').style.fontSize=(mock.zoom*100)+'%';
 }
-function mockAdvance(){
-  const it=mock.qs[mock.idx];
-  const bmTag=it&&it.p?(it.p.items[it.i].bm||curB.code):curB.code;
-  mock.ans.push({code:bmTag,short:curB.short,ok:complete()?isCorrect():false,answered:complete()});
-  mock.idx++;
-  if(mock.idx>=mock.qs.length)finishMock(); else renderMock();
+function mockReview(){
+  mock.phase='review';
+  el('passagePanel').hidden=true;
+  el('pCode').innerHTML='MOCK PM'; el('pName').innerHTML='Review'; el('pTier').innerHTML='';
+  const unans=mock.qs.filter((q,i)=>!(mock.resp[i]&&mock.resp[i].done)).length;
+  const flg=mock.flags.filter(Boolean).length;
+  el('stem').innerHTML='<strong style="font-size:1.15em">You have reached the end of the test.</strong>'+
+    '<div class="qnote">Select a question number to go back to it. '+
+    (flg?'<strong>'+flg+'</strong> flagged. ':'')+
+    (unans?'<strong style="color:var(--bad)">'+unans+' not answered.</strong> Nothing is deducted for a wrong answer, so answer every one.':'Every question has an answer.')+'</div>';
+  el('figure').innerHTML=''; el('hintSlot').innerHTML='';
+  el('answer').innerHTML='<div class="tdsgrid big">'+mock.qs.map((q,i)=>{
+    const done=mock.resp[i]&&mock.resp[i].done, fl=mock.flags[i];
+    return '<button class="tdsq'+(done?' done':'')+'" data-i="'+i+'">'+(i+1)+
+      (fl?'<span class="fl">&#9873;</span>':'')+(!done?'<span class="wn">!</span>':'')+'</button>';
+  }).join('')+'</div><div class="tdslegend">&#9873; flagged &nbsp;&middot;&nbsp; ! not answered</div>';
+  if(el('mockbar'))el('mockbar').hidden=true;
+  el('verdict').innerHTML='<div class="builder" style="margin-top:20px">'+
+    (flg?'<button class="tog" id="revFlag">Go to first flagged</button>':'')+
+    (unans?'<button class="tog" id="revUn">Go to first unanswered</button>':'')+
+    '<button class="btn" id="endTest">End test</button></div>';
+  el('answer').querySelectorAll('.tdsq').forEach(b=>b.onclick=()=>{ mock.phase='test'; mockGo(+b.dataset.i); });
+  if(el('revFlag'))el('revFlag').onclick=()=>{ const i=mock.flags.findIndex(Boolean); mock.phase='test'; mockGo(i); };
+  if(el('revUn'))el('revUn').onclick=()=>{ const i=mock.qs.findIndex((q,k)=>!(mock.resp[k]&&mock.resp[k].done)); mock.phase='test'; mockGo(i); };
+  el('endTest').onclick=()=>{
+    if(!confirm('End the test?\n\n'+(unans?unans+' question'+(unans===1?' is':'s are')+' still blank. ':'')+'You cannot change your answers after this.'))return;
+    gradeMock();
+  };
+}
+/* ---------- turning a finished paper into something a human can read ---------- */
+const ENT={'&amp;':'&','&lt;':'<','&gt;':'>','&quot;':'"','&nbsp;':' ','&middot;':'\u00b7','&mdash;':'\u2014',
+  '&ndash;':'\u2013','&rsquo;':'\u2019','&lsquo;':'\u2018','&ldquo;':'\u201c','&rdquo;':'\u201d','&hellip;':'\u2026',
+  '&times;':'\u00d7','&divide;':'\u00f7','&minus;':'\u2212','&le;':'\u2264','&ge;':'\u2265','&ne;':'\u2260','&frac12;':'1/2'};
+function plain(h){
+  return String(h==null?'':h)
+    .replace(/<sup>([^<]*)<\/sup>/g,'^$1')
+    .replace(/<span class="fr"[^>]*><span[^>]*>([^<]*)<\/span><span[^>]*>([^<]*)<\/span><\/span>/g,'$1/$2')
+    .replace(/<[^>]*>/g,' ')
+    .replace(/&#(\d+);/g,(m,d)=>String.fromCharCode(+d))
+    .replace(/&[a-z]+;/g,m=>ENT[m]!==undefined?ENT[m]:m)
+    .replace(/\s+/g,' ').trim();
+}
+function fracText(f){ return f&&typeof f==='object'&&'n' in f?(f.d===1?String(f.n):f.n+'/'+f.d):String(f); }
+/* v is a stored response value; pass null to describe the correct answer instead */
+function answerText(I,v,wantKey){
+  try{
+    const opt=(arr,i)=>arr&&arr[i]!==undefined?plain(arr[i]):'—';
+    if(I.kind==='mc')        return wantKey?opt(I.options,I.correct):(v==null?'':opt(I.options,v));
+    if(I.kind==='multi'){
+      const idx=wantKey?I.correct.map((b,i)=>b?i:-1).filter(i=>i>=0):(v||[]);
+      return idx.length?idx.slice().sort((a,b)=>a-b).map(i=>opt(I.options,i)).join(' + '):'';
+    }
+    if(I.kind==='cmp')       return wantKey?plain(I.answer):(v==null?'':plain(v));
+    if(I.kind==='order'){
+      const idx=wantKey?I.answer:(v||[]);
+      return idx.length?idx.map(i=>opt(I.chips,i)).join(' \u2192 '):'';
+    }
+    if(I.kind==='plot'){
+      const k=wantKey?I.answer:v;
+      if(k==null)return '';
+      return I.D&&I.D>1?fracText(fc(k,I.D)):String(k);
+    }
+    if(I.kind==='point'){ const q=wantKey?I.answer:v; return q?'('+q.x+', '+q.y+')':''; }
+    if(I.kind==='ineq'){
+      if(wantKey)return 'x '+({ge:'\u2265',gt:'>',le:'\u2264',lt:'<'}[I.answer.op]||'?')+' '+I.answer.a;
+      if(!v||v.k==null)return '';
+      const op=v.dir==='right'?(v.closed?'\u2265':'>'):(v.closed?'\u2264':'<');
+      return 'x '+op+' '+(v.k*I.g.step);
+    }
+    if(I.kind==='twopart'){
+      const a=wantKey?I.A.correct:(v?v.A:null), b=wantKey?I.B.correct:(v?v.B:null);
+      if(a==null&&b==null)return '';
+      return 'A: '+opt(I.A.options,a)+' | B: '+opt(I.B.options,b);
+    }
+    if(I.kind==='table'){
+      const pick=i=>wantKey?I.rows[i].correct:((v||[])[i]);
+      return I.rows.map((r,i)=>plain(r.label||r.text||('row '+(i+1)))+' = '+(pick(i)==null?'—':plain(I.cols[pick(i)]))).join('; ');
+    }
+    if(I.kind==='inline'){
+      const out=[]; let g=0;
+      I.parts.forEach((pt,i)=>{ if(typeof pt==='string')return;
+        const c=wantKey?pt.correct:((v||[])[i]); g++;
+        out.push('('+g+') '+(c==null?'—':plain(pt.choices[c]))); });
+      return out.join(' ');
+    }
+    if(I.kind==='frac')      return wantKey?fracText(I.answer):plain(v||'');
+    if(I.kind==='num')       return wantKey?String(I.answer):plain(v||'');
+  }catch(e){}
+  return wantKey?'':(v==null?'':plain(typeof v==='object'?JSON.stringify(v):v));
+}
+function applyResp(I,v){
+  picked=null;multiPick=[];orderPick=[];plotPick=null;pointPick=null;cmpPick=null;
+  ineqPick={k:null,closed:true,dir:'right'};twoPick={A:null,B:null};inlinePick=[];tablePick=[];
+  if(v===undefined||v===null)return;
+  if(I.kind==='mc')picked=v;
+  else if(I.kind==='multi')multiPick=(v||[]).slice();
+  else if(I.kind==='cmp')cmpPick=v;
+  else if(I.kind==='order')orderPick=(v||[]).slice();
+  else if(I.kind==='plot')plotPick=v;
+  else if(I.kind==='point')pointPick=v;
+  else if(I.kind==='ineq')ineqPick={k:v.k,closed:v.closed,dir:v.dir};
+  else if(I.kind==='twopart')twoPick={A:v.A,B:v.B};
+  else if(I.kind==='table')tablePick=(v||[]).slice();
+  else if(I.kind==='inline')inlinePick=(v||[]).slice();
+}
+function gradeMock(){
+  mock.ans=[];
+  const savedIdx=mock.idx;
+  for(let i=0;i<mock.qs.length;i++){
+    mock.idx=i;
+    const it=mock.qs[i];
+    if(it.p){ curB=ALLB['P.'+it.p.id]; activePassage=it.p; cur=passageItemToCur(it.p,it.i); }
+    else { curB=it.b; cur=it.q; }
+    const r=mock.resp[i]||{}, I=cur.input;
+    const same=r.kind===I.kind;
+    const gradeWith=v=>{
+      if(I.kind==='num'||I.kind==='frac'){
+        const pn=parseNum(v||'');
+        return !!pn&&(I.kind==='frac'?feq(pn,I.answer):Math.abs(fv(pn)-I.answer)<1e-9);
+      }
+      applyResp(I,v);
+      try{ return isCorrect(); }catch(e){ return false; }
+    };
+    const ok=same?gradeWith(r.v):false;
+    const firstOk=(same&&r.first!==undefined)?gradeWith(r.first):ok;
+    applyResp(I,same?r.v:null);
+    const bm=it.p?(it.p.items[it.i].bm||curB.code):curB.code;
+    mock.ans.push({
+      n:i+1, code:bm, short:curB.short, ok,
+      answered:!!(r.v!==undefined&&r.v!==null&&r.done),
+      flagged:!!mock.flags[i],
+      sec:Math.round((mock.spent[i]||0)/1000),
+      visits:mock.seen[i]||0,
+      changed:r.changed||0,
+      firstOk,
+      note:(mock.notes[i]||'').slice(0,300),
+      passage:it.p?it.p.title:null,
+      stem:plain(cur.stem).slice(0,400),
+      yours:same?answerText(I,r.v,false):'',
+      key:answerText(I,null,true)
+    });
+  }
+  mock.idx=savedIdx;
+  if(el('mockbar'))el('mockbar').hidden=true;
+  el('btnCheck').hidden=false; el('btnHint').hidden=false; el('btnSkip').hidden=false;
+  document.querySelector('.plate').style.fontSize='';
+  finishMock();
 }
 function finishMock(){
   if(mockTimer)clearInterval(mockTimer);
-  while(mock.ans.length<mock.qs.length){const it=mock.qs[mock.ans.length];mock.ans.push({code:it.b.code,short:it.b.short,ok:false,answered:false});}
+  while(mock.ans.length<mock.qs.length){ const it=mock.qs[mock.ans.length], n=mock.ans.length+1;
+    mock.ans.push({n,code:it.b?it.b.code:'P.'+it.p.id,short:it.b?it.b.short:it.p.title,ok:false,answered:false,
+      flagged:false,sec:0,visits:0,changed:0,firstOk:false,stem:'',yours:'',key:''}); }
   const right=mock.ans.filter(a=>a.ok).length, tot=mock.ans.length;
   const mins=Math.round((Date.now()-mock.start)/60000);
   const catOf=code=>{
@@ -4846,7 +5234,19 @@ function finishMock(){
   };
   const byCat={}; mock.ans.forEach(a=>{const c=catOf(a.code);byCat[c]=byCat[c]||{r:0,t:0};byCat[c].t++;if(a.ok)byCat[c].r++;});
   const missed=mock.ans.filter(a=>!a.ok);
-  ST.mocks=ST.mocks||[]; ST.mocks.push({ts:Date.now(),right,tot,mins}); if(ST.mocks.length>12)ST.mocks.shift(); save();
+  ST.mocks=ST.mocks||[]; ST.mocks.push({ts:Date.now(),right,tot,mins}); if(ST.mocks.length>12)ST.mocks.shift();
+  const paper={
+    id:'P'+Date.now().toString(36).toUpperCase(),
+    ts:Date.now(), subject:mock.reading?'ela':'math',
+    label:mock.reading?'Grade 6 ELA Reading':'Grade 6 Mathematics',
+    right, tot, mins,
+    minutes:Math.round((Date.now()-mock.start)/60000),
+    pausedMin:Math.round((mock.pausedMs||0)/60000),
+    timedOut:!!mock.timedOut,
+    items:mock.ans.map(a=>Object.assign({},a))
+  };
+  ST.papers=ST.papers||[]; ST.papers.unshift(paper); if(ST.papers.length>15)ST.papers.length=15;
+  save();
   el('pCode').innerHTML='MOCK PM'; el('pName').innerHTML='Results'; el('pTier').innerHTML=mins+' min';
   el('figure').innerHTML=''; el('hintSlot').innerHTML='';
   el('stem').innerHTML='<strong style="font-size:1.3em">'+right+' of '+tot+'</strong>'+
@@ -4857,15 +5257,272 @@ function finishMock(){
     Object.keys(byCat).map(k=>'<tr><td>'+k+'</td><td class="num">'+byCat[k].r+'</td><td class="num">'+byCat[k].t+
       ' <span style="color:var(--ink-3)">('+Math.round(byCat[k].t/mock.ans.length*100)+'%)</span></td></tr>').join('')+'</tbody></table></div>'+
     (missed.length?'<div class="seqline" style="margin-top:14px">Missed: '+missed.map(a=>a.short).join(' &middot; ')+'</div>':'')+
-    '<div class="builder" style="margin-top:16px"><button class="tog" id="againMock">Take another paper</button><button class="tog" id="leaveMock">Back to practice</button></div>';
-  el('verdict').innerHTML='<div class="verdict"><h3>What this tells you</h3><p>A mock paper measures pacing and stamina, which normal practice cannot. Compare the <em>seconds per question</em> and the strand breakdown across papers &mdash; those move long before a scale score does.</p></div>';
+    '<div class="builder" style="margin-top:16px"><button class="tog" id="againMock">Take another paper</button>'+
+    '<button class="tog" id="openPapers">Review papers</button>'+
+    '<button class="tog" id="copyPaper">Copy for review</button>'+
+    '<button class="tog" id="filePaper">Save as a file</button>'+
+    '<button class="tog" id="leaveMock">Back to practice</button></div>'+
+    '<div class="tdsnotes" id="paperOut" hidden></div>';
+  el('verdict').innerHTML='<div class="verdict"><h3>What this tells you</h3>'+diagnose(paper)+
+    '<p>A mock paper measures pacing and stamina, which normal practice cannot. Compare the <em>seconds per question</em> and the strand breakdown across papers &mdash; those move long before a scale score does.</p></div>';
   el('btnCheck').disabled=true; el('btnHint').disabled=true; el('btnSkip').disabled=true;
   if(plan&&plan.stage==='mock'){ if(mockTimer)clearInterval(mockTimer); planAfterMock(); return; }
   const wasReading=mock.reading;
   showActions(false);
+  el('copyPaper').onclick=()=>copyPaper(paper);
+  el('filePaper').onclick=()=>downloadPaper(paper);
+  el('openPapers').onclick=()=>{ mock=null; activePassage=null; deck='papers'; renderNav(); nextItem(); };
   el('againMock').onclick=()=>{ mock=null; activePassage=null; if(wasReading)buildRMock(); else buildMock(); renderMock(); };
   el('leaveMock').onclick=()=>{ mock=null; activePassage=null; deck=wasReading?'RIT':'six'; renderNav(); nextItem(); };
   renderLedger();
+}
+
+/* ============================================================
+   PAPERS — what happened on a mock, kept and re-read
+   ============================================================ */
+function med(a){ if(!a.length)return 0; const b=a.slice().sort((x,y)=>x-y);
+  return b.length%2?b[(b.length-1)/2]:(b[b.length/2-1]+b[b.length/2])/2; }
+function paperStats(pp){
+  const it=pp.items||[];
+  const timed=it.filter(a=>a.sec>0).map(a=>a.sec);
+  const m=med(timed)||0;
+  const wrong=it.filter(a=>!a.ok);
+  return {
+    m,
+    wrong,
+    rushed:wrong.filter(a=>a.answered&&m&&a.sec>0&&a.sec<m*0.6),
+    slow:wrong.filter(a=>m&&a.sec>m*1.8),
+    blank:it.filter(a=>!a.answered),
+    flagged:it.filter(a=>a.flagged),
+    flagRight:it.filter(a=>a.flagged&&a.ok),
+    lost:it.filter(a=>a.changed&&a.firstOk&&!a.ok),      // changed a right answer into a wrong one
+    saved:it.filter(a=>a.changed&&!a.firstOk&&a.ok),     // changed a wrong answer into a right one
+    changed:it.filter(a=>a.changed)
+  };
+}
+function diagnose(pp){
+  const S=paperStats(pp), n=(pp.items||[]).length||1;
+  let h='';
+  h+='<p><strong>You flagged '+S.flagged.length+'</strong>'+
+    (S.flagged.length?', and got '+S.flagRight.length+' of those right. ':'. ')+
+    (S.blank.length?'<strong style="color:var(--bad)">You left '+S.blank.length+' blank.</strong> Nothing is deducted for a wrong answer, so a guess always beats a blank.'
+      :'You answered every question, which is exactly right.')+'</p>';
+  if(S.m){
+    h+='<p>Your middle question took <strong>'+S.m+'s</strong>. ';
+    if(S.rushed.length)h+='<strong style="color:var(--bad)">'+S.rushed.length+' of your '+S.wrong.length+' misses went by in under '+Math.round(S.m*0.6)+'s.</strong> '+
+      'Those are not gaps in what you know, they are questions you answered before you finished reading: '+
+      S.rushed.map(a=>a.short).join(', ')+'.';
+    else h+='None of your misses were rushed, so the ones you got wrong are real content to work on rather than careless reading.';
+    if(S.slow.length)h+=' At the other end, '+S.slow.map(a=>a.short).join(', ')+' took more than '+Math.round(S.m*1.8)+'s <em>and</em> came out wrong &mdash; that is where the actual teaching is.';
+    h+='</p>';
+  }
+  if(S.changed.length){
+    h+='<p>You changed your mind on <strong>'+S.changed.length+'</strong> question'+(S.changed.length===1?'':'s')+'. ';
+    h+=S.saved.length?'<span style="color:var(--good)">'+S.saved.length+' of those changes rescued a wrong answer.</span> ':'';
+    h+=S.lost.length?'<span style="color:var(--bad)">'+S.lost.length+' turned a right answer into a wrong one</span> ('+S.lost.map(a=>a.short).join(', ')+'). Going back is worth it, but only change an answer when you can say what was wrong with the first one.'
+      :'Every change you made was an improvement, so going back is working for you.';
+    h+='</p>';
+  }
+  if(pp.timedOut)h+='<p style="color:var(--bad)"><strong>Time ran out.</strong> '+S.blank.length+' question'+(S.blank.length===1?'':'s')+' never got an answer. On the real paper, watch the clock at the halfway mark.</p>';
+  if(pp.pausedMin)h+='<p style="color:var(--ink-3)">Paused for about '+pp.pausedMin+' minute'+(pp.pausedMin===1?'':'s')+'. That time is not counted against you here, but on the real test a long pause closes the session.</p>';
+  return h;
+}
+function paperText(pp){
+  const S=paperStats(pp), it=pp.items||[];
+  const d=new Date(pp.ts);
+  const pad=(x,w)=>String(x).padEnd(w).slice(0,w);
+  const L=[];
+  L.push('TARGET SIX — MOCK PAPER '+pp.id);
+  L.push(pp.label+' · '+d.toLocaleDateString()+' '+d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}));
+  L.push(pp.right+' of '+pp.tot+' ('+Math.round(pp.right/pp.tot*100)+'%) in '+pp.minutes+' min, about '+
+    Math.round(pp.minutes*60/(pp.tot||1))+'s a question'+(pp.timedOut?'  [TIME RAN OUT]':''));
+  L.push('Median question '+S.m+'s · flagged '+S.flagged.length+' ('+S.flagRight.length+' right) · blank '+S.blank.length+
+    ' · changed '+S.changed.length+' ('+S.saved.length+' rescued, '+S.lost.length+' lost)');
+  if(S.rushed.length)L.push('Rushed misses (under '+Math.round(S.m*0.6)+'s): '+S.rushed.map(a=>'#'+a.n).join(' '));
+  L.push('');
+  L.push('MISSED ('+S.wrong.length+')');
+  if(!S.wrong.length)L.push('  none');
+  S.wrong.forEach(a=>{
+    L.push('  #'+a.n+'  '+a.code+'  '+a.short+'  '+a.sec+'s'+(a.flagged?'  FLAGGED':'')+
+      (a.answered?'':'  BLANK')+(a.changed?'  changed '+a.changed+'x':'')+(a.visits>1?'  visited '+a.visits+'x':''));
+    if(a.passage)L.push('     passage: '+a.passage);
+    if(a.stem)L.push('     Q: '+a.stem);
+    L.push('     his answer: '+(a.yours||'(blank)'));
+    L.push('     correct:    '+(a.key||'(see app)'));
+    if(a.note)L.push('     his note:   '+a.note);
+  });
+  L.push('');
+  L.push('ALL ITEMS  (# / right? / benchmark / seconds / flags)');
+  it.forEach(a=>L.push('  '+pad('#'+a.n,5)+(a.ok?'ok  ':'MISS')+'  '+pad(a.code,16)+pad(a.sec+'s',6)+
+    (a.flagged?'flag ':'')+(a.changed?'changed ':'')+(a.answered?'':'blank')));
+  L.push('');
+  L.push('--- machine-readable, do not edit ---');
+  L.push(JSON.stringify(pp));
+  return L.join('\n');
+}
+function paperOut(txt,msg){
+  const box=el('paperOut'); if(!box)return;
+  box.hidden=false;
+  box.innerHTML='<label>'+msg+'</label><textarea rows="10" spellcheck="false"></textarea>';
+  const ta=box.querySelector('textarea'); ta.value=txt; ta.focus(); ta.select();
+}
+function copyPaper(pp){
+  const txt=paperText(pp);
+  // show the text first: on iPad the clipboard call can be refused silently, and then
+  // selecting it by hand is the only way out
+  paperOut(txt,'Everything below is selected. Copy it and paste it into the chat.');
+  try{
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(()=>{
+        const b=el('paperOut'); if(b&&b.querySelector('label'))
+          b.querySelector('label').innerHTML='Copied to the clipboard. Paste it into the chat.';
+      },()=>{});
+    }
+  }catch(e){}
+}
+function downloadPaper(pp){
+  const txt=paperText(pp);
+  const name='target-six-paper-'+pp.id+'.txt';
+  try{
+    const b=new Blob([txt],{type:'text/plain'});
+    const u=URL.createObjectURL(b), a=document.createElement('a');
+    a.href=u; a.download=name; document.body.appendChild(a); a.click();
+    setTimeout(()=>{ URL.revokeObjectURL(u); a.remove(); },500);
+    paperOut(txt,'Saved as '+name+'. If your browser blocked the download, copy the text below instead.');
+  }catch(e){ paperOut(txt,'This browser will not save files. Copy the text below instead.'); }
+}
+function importPapers(raw){
+  const found=[];
+  String(raw).split(/\n/).forEach(line=>{
+    const t=line.trim(); if(t.charAt(0)!=='{')return;
+    try{ const o=JSON.parse(t); if(o&&o.items&&o.id)found.push(o); }catch(e){}
+  });
+  if(!found.length){ try{ const o=JSON.parse(raw);
+    (Array.isArray(o)?o:[o]).forEach(x=>{ if(x&&x.items&&x.id)found.push(x); }); }catch(e){} }
+  if(!found.length)return 0;
+  ST.papers=ST.papers||[];
+  let added=0;
+  found.forEach(o=>{ if(!ST.papers.some(x=>x.id===o.id)){ ST.papers.unshift(o); added++; } });
+  ST.papers.sort((a,b)=>b.ts-a.ts); if(ST.papers.length>15)ST.papers.length=15;
+  save();
+  return added;
+}
+/* ---------- the Review Papers screen ---------- */
+let openPaper=null, missDeck=null;
+function repeatMisses(){
+  const tally={};
+  (ST.papers||[]).forEach(pp=>{ const seen={};
+    (pp.items||[]).forEach(a=>{ if(a.ok||seen[a.code])return; seen[a.code]=1;
+      tally[a.code]=tally[a.code]||{n:0,short:a.short}; tally[a.code].n++; }); });
+  return Object.keys(tally).map(c=>({code:c,n:tally[c].n,short:tally[c].short}))
+    .sort((a,b)=>b.n-a.n);
+}
+function renderPapers(){
+  showActions(false);
+  el('passagePanel').hidden=true; activePassage=null;
+  document.querySelector('main').classList.remove('reading');
+  if(el('mockbar'))el('mockbar').hidden=true;
+  el('pCode').innerHTML='REVIEW'; el('pName').innerHTML='Mock papers'; el('pTier').innerHTML='';
+  el('figure').innerHTML=''; el('hintSlot').innerHTML=''; el('verdict').innerHTML='';
+  el('btnCheck').disabled=true; el('btnHint').disabled=true; el('btnSkip').disabled=true;
+  const ps=ST.papers||[];
+  if(openPaper){ const pp=ps.find(x=>x.id===openPaper); if(pp)return renderOnePaper(pp); openPaper=null; }
+  const rep=repeatMisses().filter(x=>x.n>=2).slice(0,8);
+  el('stem').innerHTML='<strong style="font-size:1.15em">'+(ps.length?ps.length+' paper'+(ps.length===1?'':'s')+' on file':'No papers yet')+'</strong>'+
+    '<div class="qnote">'+(ps.length
+      ? 'Every mock you finish is kept here with the time you spent on each question. Open one to see what you answered and what the answer was, or send it to be looked over.'
+      : 'Finish a Mock PM and it lands here &mdash; every question, your answer, the right answer and how long each one took.')+'</div>';
+  let h='';
+  if(ps.length){
+    h+='<div class="tablescroll"><table><thead><tr><th>Paper</th><th class="num">Score</th><th class="num">Time</th>'+
+       '<th class="num">s/Q</th><th class="num">Flag</th><th class="num">Blank</th><th></th></tr></thead><tbody>'+
+      ps.map(pp=>{ const S=paperStats(pp);
+        return '<tr><td><strong>'+new Date(pp.ts).toLocaleDateString()+'</strong><span class="bcode">'+pp.label+'</span></td>'+
+          '<td class="num mono">'+pp.right+'/'+pp.tot+'</td>'+
+          '<td class="num mono">'+pp.minutes+'m</td>'+
+          '<td class="num mono">'+Math.round(pp.minutes*60/(pp.tot||1))+'</td>'+
+          '<td class="num mono">'+S.flagged.length+'</td>'+
+          '<td class="num mono'+(S.blank.length?'" style="color:var(--bad)':'')+'">'+S.blank.length+'</td>'+
+          '<td><button class="tog" data-open="'+pp.id+'">Open</button></td></tr>';
+      }).join('')+'</tbody></table></div>';
+    if(rep.length){
+      h+='<div class="trapnote" style="margin-top:16px"><b>Missed on more than one paper.</b> '+
+        rep.map(x=>x.short+' ('+x.n+'×)').join(' &middot; ')+
+        '<div class="builder" style="margin-top:10px"><button class="btn" id="drillRep">Practise these '+rep.length+'</button></div></div>';
+    }
+    h+='<div class="builder" style="margin-top:16px">'+
+      '<button class="tog" id="copyAll">Copy every paper for review</button>'+
+      '<button class="tog" id="showImport">Load a paper from text</button>'+
+      '<button class="tog" id="wipePapers">Delete all papers</button></div>';
+  }
+  h+='<div class="tdsnotes" id="paperOut" hidden></div>';
+  el('answer').innerHTML=h;
+  el('answer').querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>{ openPaper=b.dataset.open; renderPapers(); });
+  if(el('drillRep'))el('drillRep').onclick=()=>startMissDrill(rep.map(x=>x.code),'Missed on more than one paper');
+  if(el('copyAll'))el('copyAll').onclick=()=>{
+    const txt=ps.map(paperText).join('\n\n==============================\n\n');
+    try{ if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt); }catch(e){}
+    paperOut(txt,'All '+ps.length+' papers. Copy this and paste it into the chat.');
+  };
+  if(el('showImport'))el('showImport').onclick=()=>{
+    paperOut('','Paste a paper here, then press Load.');
+    const box=el('paperOut');
+    const bt=document.createElement('button'); bt.className='tog'; bt.textContent='Load'; bt.style.marginTop='10px';
+    box.appendChild(bt);
+    bt.onclick=()=>{ const n=importPapers(box.querySelector('textarea').value);
+      alert(n?n+' paper'+(n===1?'':'s')+' loaded.':'Nothing in that text looked like a paper.');
+      if(n){ openPaper=null; renderPapers(); } };
+  };
+  if(el('wipePapers'))el('wipePapers').onclick=()=>{
+    if(!confirm('Delete every stored paper? This cannot be undone.'))return;
+    ST.papers=[]; save(); openPaper=null; renderPapers();
+  };
+}
+function renderOnePaper(pp){
+  const S=paperStats(pp);
+  el('pCode').innerHTML='REVIEW'; el('pName').innerHTML=new Date(pp.ts).toLocaleDateString();
+  el('pTier').innerHTML=pp.label;
+  el('stem').innerHTML='<strong style="font-size:1.3em">'+pp.right+' of '+pp.tot+'</strong>'+
+    '<div class="qnote">'+Math.round(pp.right/pp.tot*100)+'% in '+pp.minutes+' minutes &middot; median question '+S.m+'s'+
+    (pp.timedOut?' &middot; <strong style="color:var(--bad)">time ran out</strong>':'')+'</div>';
+  el('verdict').innerHTML='<div class="verdict"><h3>What this tells you</h3>'+diagnose(pp)+'</div>';
+  const row=a=>'<tr'+(a.ok?'':' style="background:var(--bad-soft)"')+'>'+
+    '<td class="num mono">'+a.n+'</td>'+
+    '<td><strong>'+(a.ok?'✓':'✗')+'</strong></td>'+
+    '<td><strong>'+a.short+'</strong><span class="bcode">'+a.code+'</span>'+
+      (a.stem?'<div class="rvstem">'+a.stem+'</div>':'')+'</td>'+
+    '<td class="rvans">'+(a.answered?a.yours||'&mdash;':'<em style="color:var(--bad)">blank</em>')+'</td>'+
+    '<td class="rvans">'+(a.key||'&mdash;')+'</td>'+
+    '<td class="num mono">'+a.sec+'s</td>'+
+    '<td class="mono" style="font-size:11.5px;color:var(--ink-3)">'+
+      (a.flagged?'flag ':'')+(a.changed?'chg'+a.changed+' ':'')+(a.visits>1?'×'+a.visits:'')+'</td></tr>';
+  el('answer').innerHTML=
+    '<div class="tablescroll"><table class="review"><thead><tr><th class="num">#</th><th></th><th>Question</th>'+
+      '<th>His answer</th><th>Correct</th><th class="num">Time</th><th></th></tr></thead><tbody>'+
+      (pp.items||[]).map(row).join('')+'</tbody></table></div>'+
+    '<div class="builder" style="margin-top:16px">'+
+      (S.wrong.length?'<button class="btn" id="drillThis">Practise these '+S.wrong.length+' now</button>':'')+
+      '<button class="tog" id="copyThis">Copy for review</button>'+
+      '<button class="tog" id="fileThis">Save as a file</button>'+
+      '<button class="tog" id="backPapers">All papers</button>'+
+      '<button class="tog" id="dropThis">Delete this paper</button></div>'+
+    '<div class="tdsnotes" id="paperOut" hidden></div>';
+  if(el('drillThis'))el('drillThis').onclick=()=>startMissDrill(
+    [...new Set(S.wrong.map(a=>a.code))],'Missed on the paper of '+new Date(pp.ts).toLocaleDateString());
+  el('copyThis').onclick=()=>copyPaper(pp);
+  el('fileThis').onclick=()=>downloadPaper(pp);
+  el('backPapers').onclick=()=>{ openPaper=null; renderPapers(); };
+  el('dropThis').onclick=()=>{ if(!confirm('Delete this paper?'))return;
+    ST.papers=(ST.papers||[]).filter(x=>x.id!==pp.id); save(); openPaper=null; renderPapers(); };
+}
+/* practise exactly what a paper showed he missed */
+function startMissDrill(codes,why){
+  const known=codes.filter(c=>ALLB[c]);
+  if(!known.length){ alert('Those questions came from passages rather than single benchmarks, so there is nothing to rebuild a deck from.'); return; }
+  missDeck={codes:known,why};
+  subject=known.every(c=>c.indexOf('ELA')===0)?'ela':'math';
+  deck='misses'; openPaper=null; mock=null; plan=null; dayRun=null;
+  renderNav(); nextItem();
 }
 
 /* ============================================================
@@ -4920,7 +5577,7 @@ el('btnCheck').onclick=check;
 el('btnHint').onclick=()=>{ if(answered||!cur.hint)return;
   el('hintSlot').innerHTML='<div class="hintbox"><b>Nudge</b>'+cur.hint+'</div>'; el('btnHint').disabled=true;
   bst(curB.code).hinted++; save(); };
-el('btnSkip').onclick=()=>{ if(mock&&(deck==='mock'||deck==='rmock')&&(!plan||plan.stage==='mock')){ mockAdvance(); return; } if(answered)return;
+el('btnSkip').onclick=()=>{ if(mock&&(deck==='mock'||deck==='rmock')&&(!plan||plan.stage==='mock')){ return; } if(answered)return;
   const st=bst(curB.code); st.skipped++; save();
   if(activePassage)passageIdx++;
   nextItem(curB.passage&&passageIdx<passageQueue.length?curB:null); };
