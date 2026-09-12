@@ -5388,7 +5388,7 @@ function downloadPaper(pp){
     const u=URL.createObjectURL(b), a=document.createElement('a');
     a.href=u; a.download=name; document.body.appendChild(a); a.click();
     setTimeout(()=>{ URL.revokeObjectURL(u); a.remove(); },500);
-    paperOut(txt,'Saved as '+name+'. If your browser blocked the download, copy the text below instead.');
+    paperOut(txt,'Tried to save it as '+name+'. Downloads do not work inside the Claude viewer and some iPad browsers block them too &mdash; if no file appeared, copy the text below instead.');
   }catch(e){ paperOut(txt,'This browser will not save files. Copy the text below instead.'); }
 }
 function importPapers(raw){
