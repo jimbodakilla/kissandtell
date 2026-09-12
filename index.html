@@ -327,6 +327,28 @@ button.calck.eq{background:var(--accent);border-color:var(--accent);color:var(--
   color:var(--ink);border:1px solid var(--line);border-radius:var(--r);resize:vertical}
 .opt.struck span:last-child,.chip.struck{text-decoration:line-through;opacity:.5}
 #answer.strikemode .opt{cursor:crosshair}
+.hotwrap{margin:20px 0 0;font-family:Spectral,Georgia,serif;font-size:17px;line-height:1.95;max-width:64ch}
+.hot{cursor:pointer;padding:2px 4px;border-radius:3px;border:1px dashed transparent;transition:.12s}
+.hot:hover{background:var(--accent-soft);border-color:var(--accent-line)}
+.hot.on{background:var(--accent);color:var(--paper);border-color:var(--accent)}
+.hot.right{background:var(--good);color:var(--paper);border-color:var(--good)}
+.hot.wrong{background:var(--bad);color:var(--paper);border-color:var(--bad)}
+.hot:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.dragtray{display:flex;flex-wrap:wrap;gap:8px;margin:20px 0 0;min-height:52px;padding:10px;
+  background:var(--paper-2);border:1px dashed var(--line);border-radius:var(--r)}
+button.dchip{font:inherit;font-size:14.5px;cursor:pointer;background:var(--paper);color:var(--ink);
+  border:1px solid var(--line);border-radius:var(--r);padding:9px 13px;min-height:42px}
+button.dchip:hover:not(:disabled){border-color:var(--accent)}
+button.dchip.held{background:var(--accent);border-color:var(--accent);color:var(--paper)}
+button.dchip.placed{background:var(--accent-soft);border-color:var(--accent-line)}
+button.dchip.right{background:var(--good-soft);border-color:var(--good);color:var(--ink)}
+button.dchip.wrong{background:var(--bad-soft);border-color:var(--bad);color:var(--ink)}
+.dragbuckets{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-top:12px}
+.dbucket{border:1px solid var(--line);border-radius:var(--r);background:var(--paper);padding:10px;cursor:pointer}
+.dbucket:hover{border-color:var(--accent-line)}
+.dblab{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink-3);margin-bottom:8px}
+.dbin{display:flex;flex-wrap:wrap;gap:7px;min-height:46px}
 .hlmark{border-radius:3px;padding:0 1px;color:#12232E}
 
 /* ---------- svg figure styling ---------- */
@@ -4051,6 +4073,19 @@ const PASSAGES=[
       'The last move is the strongest. The fuel-tank comparison invites you to agree with something obviously true &mdash; half a tank will not finish a race &mdash; and then transfers that agreement onto a claim you have not examined, namely that drinking water is the equivalent of half a tank. For most people exercising for under an hour, it is not; it is a full one. The comparison is not evidence. It is a way of borrowing the feeling of evidence.',
       'None of this means the drink is bad. It means the advertisement has told you almost nothing about whether it is.']}],
  items:[
+  {bm:'ELA.6.R.3.4',type:'hottext',
+   q:'Read this excerpt from Passage 2.<br><br><strong>Click the sentence that names the trick rather than describing it.</strong>',
+   spans:['The last move is the strongest.',
+          'The fuel-tank comparison invites you to agree with something obviously true and then transfers that agreement onto a claim you have not examined.',
+          'For most people exercising for under an hour, it is not; it is a full one.',
+          'The comparison is not evidence.',
+          'It is a way of borrowing the feeling of evidence.'],
+   correct:[4],pickN:1,
+   h:'Four of these describe what happens. One gives it a name you could reuse on a different advertisement.',
+   s:['The second sentence walks through the mechanism step by step.',
+      'The last sentence compresses all of that into a name: borrowing the feeling of evidence.',
+      'A name is portable. Once you have it, you can spot the same move in an advertisement you have never seen, which is why it is the sentence worth keeping.']},
+  
   {bm:'ELA.6.R.3.4',q:'According to Passage 2, why does the phrase &ldquo;developed with <strong>input</strong> from sports scientists&rdquo; work so well for the advertiser?',
    o:['It can honestly describe either a great deal of research or almost none.',
       'It names the scientists who were involved without revealing who actually employed them.',
@@ -4215,6 +4250,16 @@ const PASSAGES=[
   'The likeliest explanation is the same feedback loop running backwards. As rainfall weakened, some vegetation died. Bare sand reflects more sunlight than plants do, so the surface cooled, weakening the monsoon further and killing more vegetation. A slow push produced a fast collapse, because the system had been holding itself up.',
   'This is why the green Sahara is studied so closely by people who are not primarily interested in ancient Africa. It is the clearest large-scale example we have of a climate system that absorbed a gradual change for thousands of years and then reorganised itself in a few hundred.']
  ,items:[
+  {bm:'ELA.6.R.2.2',type:'drag',
+   q:'<strong>Sort each step into the loop it belongs to.</strong>',
+   chips:['Plants take hold and darken the surface','Bare sand reflects more sunlight away','Rainfall weakens and vegetation dies','More sunlight is absorbed, strengthening the monsoon'],
+   buckets:['The loop that made the Sahara green','The loop that turned it back to desert'],
+   correct:[0,1,1,0],
+   h:'One loop feeds itself wetter, the other feeds itself drier. Read each card and ask which way it pushes.',
+   s:['Green loop: plants darken the ground, the ground absorbs more heat, the monsoon strengthens, more rain arrives.',
+      'Desert loop: rain weakens, plants die, bare sand reflects heat away, the monsoon weakens further.',
+      'They are the same mechanism running in opposite directions, which is why the passage says a slow push produced a fast collapse.']},
+  
   {bm:'ELA.6.V.1.3',q:'As used in <strong>paragraph 5</strong>, <em>accumulates</em> most nearly means:',
    o:['builds up in a layer over time','is blown away by the wind','dissolves into the surrounding water','is measured by scientific instruments'],
    c:0,h:'What must the dust be doing for a core taken years later to record it?',
@@ -4298,6 +4343,16 @@ const PASSAGES=[
   'In 1976 a canoe called H&#333;k&#363;le&#699;a sailed from Hawai&#699;i to Tahiti without instruments, navigated by Mau Piailug, a master navigator from the island of Satawal in Micronesia and one of the few people left who held the full system. The voyage was, among other things, an argument: settlement of the Pacific had sometimes been explained as a matter of drift and accident, and the voyage demonstrated that the islands could be reached deliberately, and reached again.',
   'Piailug afterwards did something his own tradition did not require of him. He taught the system outside his family and outside his island, to Hawaiians and others, on the grounds that a method held by six people is one accident away from being held by none. There are now navigators trained in that lineage across the Pacific.']
  ,items:[
+  {bm:'ELA.6.R.2.1',type:'drag',
+   q:'<strong>Sort each detail into the system it belongs to.</strong>',
+   chips:['A sextant and printed tables','Steering by the angle between swells','Birds that feed at sea and roost on land','A chart that can be copied','A memorised ring of star bearings'],
+   buckets:['The European method','The Polynesian method'],
+   correct:[0,1,1,0,1],
+   h:'Ask of each card: does this live in an object, or in a person?',
+   s:['The sextant, the tables and the chart are all things you can hand to somebody else.',
+      'The swells, the birds and the star compass are things a trained navigator carries in their head and their body.',
+      'That split is the whole point of the passage: &ldquo;The difference is where the precision is stored.&rdquo;']},
+  
   {bm:'ELA.6.V.1.3',type:'twopart',
    qA:'As used in <strong>paragraph 2</strong>, <em>externalises</em> most nearly means:',
    oA:['stores the knowledge outside the person who uses it','makes the knowledge more difficult to learn',
@@ -4389,6 +4444,18 @@ const PASSAGES=[
   'A third approach changes the net. Panels made of material designed to weaken after a set period are being tested, so that a lost net stops holding after months rather than continuing for years. The engineering difficulty is obvious: the panel has to survive normal use and fail reliably afterwards, and those two requirements pull against each other.',
   'None of the three is sufficient alone. Recovery cannot outpace loss. Tagging depends on fleets choosing to participate. Degradable panels are not yet proven at scale. The approaches that look most promising combine them, and the common feature of the successful schemes so far is unglamorous: they give the people who lose gear a practical reason to report it, rather than relying on them to absorb a cost for a benefit they will never see.']
  ,items:[
+  {bm:'ELA.6.R.2.1',type:'hottext',
+   q:'Read this excerpt from paragraph 3.<br><br><strong>Click the sentence that states the limitation of recovery rather than a practical difficulty with it.</strong>',
+   spans:['The first proposed solution was the obvious one: go and get it.',
+          'Recovery works, and volunteer and commercial teams have lifted thousands of tonnes.',
+          'But it is expensive, it is dangerous, it requires knowing where the net is, and the ocean is very large.',
+          'Recovery treats gear that has already been lost, which means it will always be running behind the rate at which more is lost.'],
+   correct:[3],pickN:1,
+   h:'Cost and danger could be solved with money. Ask which sentence describes something no amount of money would fix.',
+   s:['The third sentence lists practical obstacles: expense, danger, not knowing where to look.',
+      'The fourth describes something different in kind &mdash; recovery acts after the loss, so it can never get ahead of it.',
+      'Hot text items usually offer several true sentences and ask for the one that does a particular job. Read the job in the question, not just the sentences.']},
+  
   {bm:'ELA.6.V.1.3',q:'As used in <strong>paragraph 6</strong>, <em>unglamorous</em> most nearly means:',
    o:['ordinary and unexciting rather than impressive','difficult and expensive to carry out',
       'unpopular with the people it affects most','untested and not yet proven to work'],
@@ -4473,6 +4540,19 @@ const PASSAGES=[
   'I am not asking anyone to throw away a device. I am asking for something smaller: keep one gap. Choose an activity you already do &mdash; a walk, a journey, washing up &mdash; and do not fill it. Not as a punishment. As an experiment, run on yourself, to find out what your mind does when you finally stop handing it something to do.',
   'You may find it does nothing at all. That would be worth knowing too.']
  ,items:[
+  {bm:'ELA.6.R.2.4',type:'hottext',
+   q:'Read this excerpt from the piece.<br><br><strong>Click the two sentences in which the writer concedes something to the other side.</strong>',
+   spans:['And we have filled nearly everything else.',
+          'I am not going to pretend this is a catastrophe.',
+          'Much of what fills those gaps is genuinely good, and some of it is a lifeline for people who would otherwise be alone with their thoughts in a way that does them harm.',
+          'But I would ask you to notice the trade.',
+          'A gap is uncomfortable and therefore unpopular, and we have made gaps optional.'],
+   correct:[1,2],pickN:2,
+   h:'A concession is where the writer agrees with an objection before answering it. Two sentences here do that.',
+   s:['&ldquo;I am not going to pretend this is a catastrophe&rdquo; gives up the strongest version of his own claim.',
+      '&ldquo;Much of what fills those gaps is genuinely good&hellip;&rdquo; goes further and states the other side&rsquo;s case for it.',
+      'The sentence beginning &ldquo;But&rdquo; is the turn back to his argument, not a concession &mdash; which is exactly the sentence students most often click by mistake.']},
+  
   {bm:'ELA.6.V.1.3',q:'As used in <strong>paragraph 4</strong>, an <em>enforced</em> gap is one that:',
    o:['happened whether you wanted it or not','was created deliberately by the reader',
       'lasted much longer than people expected','was required by a rule at school or work'],
@@ -4867,9 +4947,9 @@ function bst(code){ const d={tier:1,streak:0,tried:0,right:0,secured:false,t3:[]
 /* ============================================================
    STATE
    ============================================================ */
-let retestQ=[], sinceRetest=0;
+let retestQ=[], sinceRetest=0, dragHeld=null;
 let subject='math', deck='six', cur=null, curB=null, answered=false, picked=null, passageRight=0, t0=0, deckDone=false, twoPick={A:null,B:null}, inlinePick=[], tablePick=[],
-    multiPick=[], orderPick=[], plotPick=null, pointPick=null, cmpPick=null,
+    multiPick=[], orderPick=[], plotPick=null, pointPick=null, cmpPick=null, hotPick=[], dragPick=[],
     ineqPick={k:null,closed:true,dir:'right'}, activePassage=null, passageQueue=[], passageIdx=0;
 
 const DECKS={
@@ -5063,6 +5143,13 @@ function validQ(q){
     if(!g.length||g.some(x=>!x.choices||x.choices.length<2||!(x.correct>=0&&x.correct<x.choices.length)))return false; }
   if(I.kind==='table'){ if(!I.rows||!I.rows.length||!I.cols||I.cols.length<2)return false;
     if(I.rows.some(r=>!(r.correct>=0&&r.correct<I.cols.length)))return false; }
+  if(I.kind==='hottext'){ if(!I.spans||I.spans.length<3||!I.correct||!I.correct.length)return false;
+    if(I.correct.some(i=>!(i>=0&&i<I.spans.length)))return false;
+    if(new Set(I.correct).size!==I.correct.length)return false; }
+  if(I.kind==='drag'){ if(!I.chips||I.chips.length<3||!I.buckets||I.buckets.length<2)return false;
+    if(!I.correct||I.correct.length!==I.chips.length)return false;
+    if(I.correct.some(b=>!(b>=0&&b<I.buckets.length)))return false;
+    if(new Set(I.correct).size<2)return false; }
   if(I.kind==='num'&&(typeof I.answer!=='number'||!isFinite(I.answer)))return false;
   if(I.kind==='frac'&&(!I.answer||!isFinite(I.answer.n)||!I.answer.d))return false;
   return true;
@@ -5102,7 +5189,7 @@ function nextItem(force){
   if(!force&&!deckDone&&dbs.length&&dbs.every(b=>bst(b.code).secured)){ renderRail(); renderLedger(); return deckComplete(); }
   curB=force||chooseBenchmark();
   answered=false;picked=null;multiPick=[];orderPick=[];plotPick=null;pointPick=null;cmpPick=null;
-  ineqPick={k:null,closed:true,dir:'right'};twoPick={A:null,B:null};inlinePick=[];tablePick=[];
+  ineqPick={k:null,closed:true,dir:'right'};twoPick={A:null,B:null};inlinePick=[];tablePick=[];hotPick=[];dragPick=[];
   el('verdict').innerHTML='';el('hintSlot').innerHTML='';
   if(curB.passage){ startPassage(curB.passage); } else { el('passagePanel').hidden=true; document.querySelector('main').classList.remove('reading'); activePassage=null; cur=makeQ(curB,bst(curB.code).tier); renderItem(); }
   renderRail();renderLedger();
@@ -5229,6 +5316,15 @@ function renderItem(){
         I.cols.map((c,ci)=>'<td class="mcell"><button class="tcell" data-r="'+ri+'" data-c="'+ci+'" aria-pressed="false" aria-label="'+r.plain+' — '+c+'"></button></td>').join('')+
       '</tr>').join('')+'</tbody></table></div><div class="seqline">Choose one column in every row.</div>';
   }
+  else if(I.kind==='hottext'){
+    h='<div class="hotwrap">'+I.spans.map((t,i)=>'<span class="hot" data-i="'+i+'" role="button" tabindex="0">'+t+'</span>').join(' ')+'</div>'+
+      '<div class="seqline">'+(I.pickN>1?'Click the <strong>'+I.pickN+'</strong> sentences that apply.':'Click the sentence that applies.')+'</div>';
+  }
+  else if(I.kind==='drag'){
+    h='<div class="dragtray" id="dragTray">'+I.chips.map((c,i)=>'<button class="dchip" data-i="'+i+'">'+c+'</button>').join('')+'</div>'+
+      '<div class="dragbuckets">'+I.buckets.map((b,bi)=>'<div class="dbucket" data-b="'+bi+'"><div class="dblab">'+b+'</div><div class="dbin" data-b="'+bi+'"></div></div>').join('')+'</div>'+
+      '<div class="seqline">Tap a card, then tap the box it belongs in. Tap a placed card to take it back.</div>';
+  }
   else if(I.kind==='plot'){ h='<div class="seqline" id="seqLine">Click a tick mark on the number line above.</div>'; }
   else if(I.kind==='point'){ h='<div class="seqline" id="seqLine">Click the grid above to place your point.</div>'; }
   else if(I.kind==='cmp'){ h='<div class="opts three">'+['&lt;','=','&gt;'].map((c,i)=>'<button class="opt mn cmpbtn" data-c="'+['<','=','>'][i]+'" aria-pressed="false"><span class="kx">'+(i+1)+'</span><span>'+c+'</span></button>').join('')+'</div>'; }
@@ -5257,6 +5353,42 @@ function renderItem(){
 }
 function wire(){
   const I=cur.input;
+  if(I.kind==='hottext'){
+    const pick=b=>{
+      if(answered)return;
+      const i=+b.dataset.i, at=hotPick.indexOf(i);
+      if(at>=0)hotPick.splice(at,1);
+      else { if(hotPick.length>=(I.pickN||1))hotPick.shift(); hotPick.push(i); }
+      el('answer').querySelectorAll('.hot').forEach(x=>x.classList.toggle('on',hotPick.indexOf(+x.dataset.i)>=0));
+    };
+    el('answer').querySelectorAll('.hot').forEach(b=>{
+      b.onclick=()=>pick(b);
+      b.onkeydown=e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); pick(b); } };
+    });
+  }
+  if(I.kind==='drag'){
+    const redraw=()=>{
+      el('answer').querySelectorAll('.dchip').forEach(c=>{
+        const i=+c.dataset.i, b=dragPick[i];
+        const home=b==null?el('dragTray'):el('answer').querySelector('.dbin[data-b="'+b+'"]');
+        if(home&&c.parentNode!==home)home.appendChild(c);
+        c.classList.toggle('placed',b!=null);
+        c.classList.toggle('held',dragHeld===i);
+      });
+    };
+    el('answer').querySelectorAll('.dchip').forEach(c=>c.onclick=()=>{
+      if(answered)return;
+      const i=+c.dataset.i;
+      if(dragPick[i]!=null){ dragPick[i]=null; dragHeld=null; return redraw(); }  // take it back
+      dragHeld=(dragHeld===i)?null:i; redraw();
+    });
+    el('answer').querySelectorAll('.dbucket').forEach(bk=>bk.onclick=e=>{
+      if(answered||dragHeld==null)return;
+      if(e.target.closest('.dchip'))return;
+      dragPick[dragHeld]=+bk.dataset.b; dragHeld=null; redraw();
+    });
+    redraw();
+  }
   if(I.kind==='inline'){
     el('answer').querySelectorAll('.ichip').forEach(b=>b.onclick=()=>{
       if(answered)return; const g=+b.dataset.g; inlinePick[g]=+b.dataset.i;
@@ -5537,6 +5669,8 @@ function isCorrect(){ const I=cur.input;
   if(I.kind==='mc')return picked===I.correct;
   if(I.kind==='multi'){ const want=I.correct.map((v,i)=>v?i:-1).filter(i=>i>=0).sort().join(',');
     return multiPick.slice().sort((a,b)=>a-b).join(',')===want; }
+  if(I.kind==='hottext')return hotPick.slice().sort((a,b)=>a-b).join(',')===I.correct.slice().sort((a,b)=>a-b).join(',');
+  if(I.kind==='drag')return I.correct.every((b,i)=>dragPick[i]===b);
   if(I.kind==='order')return orderPick.join(',')===I.answer.join(',');
   if(I.kind==='plot')return plotPick===I.answer;
   if(I.kind==='point')return !!pointPick&&pointPick.x===I.answer.x&&pointPick.y===I.answer.y;
@@ -5555,6 +5689,8 @@ function complete(){ const I=cur.input;
   if(I.kind==='table')return I.rows.every((r,i)=>tablePick[i]!==undefined);
   if(I.kind==='mc')return picked!==null;
   if(I.kind==='multi')return multiPick.length>0;
+  if(I.kind==='hottext')return hotPick.length===(I.pickN||1);
+  if(I.kind==='drag')return I.chips.every((c,i)=>dragPick[i]!=null);
   if(I.kind==='order')return orderPick.length===I.chips.length;
   if(I.kind==='plot')return plotPick!==null;
   if(I.kind==='point')return !!pointPick;
@@ -5626,6 +5762,18 @@ function check(){
       const good=I.kind==='mc'?i===I.correct:I.correct[i];
       const chose=I.kind==='mc'?picked===i:multiPick.indexOf(i)>=0;
       if(good)b.classList.add('right'); else if(chose)b.classList.add('wrong'); });
+  }
+  if(I.kind==='hottext'){
+    el('answer').querySelectorAll('.hot').forEach(b=>{ const i=+b.dataset.i;
+      b.style.cursor='default';
+      if(I.correct.indexOf(i)>=0)b.classList.add('right');
+      else if(hotPick.indexOf(i)>=0)b.classList.add('wrong'); });
+  }
+  if(I.kind==='drag'){
+    el('answer').querySelectorAll('.dchip').forEach(c=>{ const i=+c.dataset.i; c.disabled=true;
+      c.classList.add(dragPick[i]===I.correct[i]?'right':'wrong'); });
+    const sl=el('answer').querySelector('.seqline');
+    if(sl)sl.innerHTML='Correct grouping: '+I.chips.map((c,i)=>'<strong>'+c+'</strong> &rarr; '+I.buckets[I.correct[i]]).join(' &middot; ');
   }
   if(I.kind==='cmp')el('answer').querySelectorAll('.opt').forEach(b=>{b.disabled=true;
     if(b.dataset.c===I.answer)b.classList.add('right'); else if(b.dataset.c===cmpPick)b.classList.add('wrong');});
@@ -5854,7 +6002,7 @@ function planServeWarm(){
   }
   const w=plan.warm[plan.wi];
   answered=false;picked=null;multiPick=[];orderPick=[];plotPick=null;pointPick=null;cmpPick=null;
-  ineqPick={k:null,closed:true,dir:'right'};twoPick={A:null,B:null};inlinePick=[];tablePick=[];
+  ineqPick={k:null,closed:true,dir:'right'};twoPick={A:null,B:null};inlinePick=[];tablePick=[];hotPick=[];dragPick=[];
   el('verdict').innerHTML='';el('hintSlot').innerHTML='';
   if(w.gen){ curB=w.gen; cur=makeQ(w.gen,2); el('passagePanel').hidden=true; activePassage=null; }
   else {
@@ -5885,6 +6033,14 @@ function passageItemToCur(pg,i){
     const remap={}; order.forEach((oldI,newI)=>{ remap[oldI]=newI; });
     inp={kind:'table',rowHead:it.rowHead||'',cols:order.map(i=>it.cols[i]),
          rows:SH(it.rows.map(r=>({label:r.label,plain:r.label.replace(/<[^>]*>/g,''),correct:remap[r.correct]})))};
+  } else if(it.type==='hottext'){
+    // the spans are read in order, so they are never shuffled
+    inp={kind:'hottext',spans:it.spans.slice(),correct:it.correct.slice(),pickN:it.pickN||it.correct.length};
+  } else if(it.type==='drag'){
+    const bo=SH(it.buckets.map((_,i)=>i));            // shuffle the boxes, then the cards, keeping the key aligned
+    const bmap={}; bo.forEach((orig,n)=>{ bmap[orig]=n; });
+    const pairs=SH(it.chips.map((c,i)=>({c,b:bmap[it.correct[i]]})));
+    inp={kind:'drag',chips:pairs.map(x=>x.c),buckets:bo.map(i=>it.buckets[i]),correct:pairs.map(x=>x.b)};
   } else {
     const oo=SH(it.o.map((o,k)=>({o,ok:k===it.c})));
     inp={kind:'mc',options:oo.map(x=>x.o),correct:oo.findIndex(x=>x.ok)};
@@ -5973,7 +6129,7 @@ function planServeSecond(){
   if(plan.si>=plan.second.length)return planDone();
   const w=plan.second[plan.si];
   answered=false;picked=null;multiPick=[];orderPick=[];plotPick=null;pointPick=null;cmpPick=null;
-  ineqPick={k:null,closed:true,dir:'right'};twoPick={A:null,B:null};inlinePick=[];tablePick=[];
+  ineqPick={k:null,closed:true,dir:'right'};twoPick={A:null,B:null};inlinePick=[];tablePick=[];hotPick=[];dragPick=[];
   el('verdict').innerHTML='';el('hintSlot').innerHTML='';
   if(w.gen){ curB=w.gen; cur=makeQ(w.gen,3); el('passagePanel').hidden=true; activePassage=null; }
   else { curB=ALLB['P.'+w.p.id];
@@ -6032,7 +6188,12 @@ function buildRMock(){
     return pc('RPP')>=25&&pc('RPP')<=35&&pc('RIT')>=25&&pc('RIT')<=35&&pc('AGV')>=35&&pc('AGV')<=50; };
   let best=null,bestErr=1e9;
   for(let attempt=0;attempt<400;attempt++){
-    const chosen=SH(PASSAGES).slice(0,RI(3,5));
+    // hot text and drag live only on passages, so make sure the draw reaches them
+    const withType=t=>PASSAGES.filter(pg=>pg.items.some(it=>(it.type||'mc')===t));
+    const seed=[];
+    [withType('hottext'),withType('drag')].forEach(pool=>{ if(pool.length)seed.push(PK(pool)); });
+    const rest=SH(PASSAGES.filter(pg=>seed.indexOf(pg)<0));
+    const chosen=seed.concat(rest).slice(0,Math.max(seed.length,RI(3,5)));
     const blocks=chosen.map(pg=>SH(pg.items.map((_,k)=>k)).map(i=>({p:pg,i})));
     let flat=blocks.flat();
     if(flat.length>N-4)flat=blocks.slice(0,Math.max(1,blocks.length-1)).flat();
@@ -6081,7 +6242,17 @@ function buildRMock(){
     }
     if(cand){ vblock[k]={b:f[2],q:cand}; nonMc++; }
   }
-  const all=SH(best.blocks.concat([vblock])).flat().slice(0,N);
+  const allFull=SH(best.blocks.concat([vblock])).flat();
+  const all=allFull.slice(0,N);
+  // the trim to N can cut the very item that carried a format; swap it back over a plain MC
+  const typeOf=x=>x.p?(x.p.items[x.i].type||'mc'):(x.q&&x.q.input?x.q.input.kind:'mc');
+  ['hottext','drag'].forEach(t=>{
+    if(all.some(x=>typeOf(x)===t))return;
+    const cand=allFull.slice(N).find(x=>typeOf(x)===t);
+    if(!cand)return;
+    const at=all.findIndex(x=>x.p&&typeOf(x)==='mc');
+    if(at>=0)all[at]=cand;
+  });
   mock={reading:true,qs:all,idx:0,ans:[],resp:[],flags:[],strike:[],notes:[],phase:'test',visits:0,pausedAt:null,pausedMs:0,spent:[],seen:[],
     ability:2,reached:0,start:Date.now(),dur:90*60*1000};
   mock.phase='brief';
@@ -6231,6 +6402,8 @@ function captureResp(){
   const before=r.done?serialResp(r):null;
   if(I.kind==='mc')r.v=picked;
   else if(I.kind==='multi')r.v=multiPick.slice();
+  else if(I.kind==='hottext')r.v=hotPick.slice();
+  else if(I.kind==='drag')r.v=dragPick.slice();
   else if(I.kind==='cmp')r.v=cmpPick;
   else if(I.kind==='order')r.v=orderPick.slice();
   else if(I.kind==='num'||I.kind==='frac')r.v=el('numIn')?el('numIn').value:'';
@@ -6458,7 +6631,7 @@ function renderMock(){
     document.querySelector('main').classList.remove('reading'); activePassage=null;
   }
   answered=false;
-  picked=null;multiPick=[];orderPick=[];plotPick=null;pointPick=null;cmpPick=null;ineqPick={k:null,closed:true,dir:'right'};twoPick={A:null,B:null};inlinePick=[];tablePick=[];
+  picked=null;multiPick=[];orderPick=[];plotPick=null;pointPick=null;cmpPick=null;ineqPick={k:null,closed:true,dir:'right'};twoPick={A:null,B:null};inlinePick=[];tablePick=[];hotPick=[];dragPick=[];
   el('verdict').innerHTML=''; el('hintSlot').innerHTML='';
   renderItem();
   restoreResp();
@@ -6529,6 +6702,14 @@ function answerText(I,v,wantKey){
       const idx=wantKey?I.correct.map((b,i)=>b?i:-1).filter(i=>i>=0):(v||[]);
       return idx.length?idx.slice().sort((a,b)=>a-b).map(i=>opt(I.options,i)).join(' + '):'';
     }
+    if(I.kind==='hottext'){
+      const idx=wantKey?I.correct:(v||[]);
+      return idx.length?idx.slice().sort((a,b)=>a-b).map(i=>'&ldquo;'+plain(I.spans[i])+'&rdquo;').join(' + '):'';
+    }
+    if(I.kind==='drag'){
+      const pk=wantKey?I.correct:(v||[]);
+      return I.chips.map((c,i)=>plain(c)+' \u2192 '+(pk[i]==null?'\u2014':plain(I.buckets[pk[i]]))).join('; ');
+    }
     if(I.kind==='cmp')       return wantKey?plain(I.answer):(v==null?'':plain(v));
     if(I.kind==='order'){
       const idx=wantKey?I.answer:(v||[]);
@@ -6579,10 +6760,12 @@ function itemStemText(c){
 }
 function applyResp(I,v){
   picked=null;multiPick=[];orderPick=[];plotPick=null;pointPick=null;cmpPick=null;
-  ineqPick={k:null,closed:true,dir:'right'};twoPick={A:null,B:null};inlinePick=[];tablePick=[];
+  ineqPick={k:null,closed:true,dir:'right'};twoPick={A:null,B:null};inlinePick=[];tablePick=[];hotPick=[];dragPick=[];
   if(v===undefined||v===null)return;
   if(I.kind==='mc')picked=v;
   else if(I.kind==='multi')multiPick=(v||[]).slice();
+  else if(I.kind==='hottext')hotPick=(v||[]).slice();
+  else if(I.kind==='drag')dragPick=(v||[]).slice();
   else if(I.kind==='cmp')cmpPick=v;
   else if(I.kind==='order')orderPick=(v||[]).slice();
   else if(I.kind==='plot')plotPick=v;
