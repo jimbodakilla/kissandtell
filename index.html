@@ -272,6 +272,16 @@ table.review td{vertical-align:top}
 .rvstem{font-size:12.5px;color:var(--ink-2);margin-top:4px;max-width:52ch;line-height:1.45}
 .rvans{font-size:13px}
 @media(max-width:620px){ .rvstem{display:none} table.review{min-width:470px} }
+.calcbox{max-width:290px}
+.calcread{font-family:"IBM Plex Mono",monospace;font-size:24px;text-align:right;padding:10px 12px;
+  background:var(--paper);border:1px solid var(--line);border-radius:var(--r);margin-bottom:10px;
+  overflow-x:auto;white-space:nowrap}
+.calcpad{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+button.calck{font:inherit;font-family:"IBM Plex Mono",monospace;font-size:17px;cursor:pointer;min-height:46px;
+  background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:var(--r)}
+button.calck:hover{border-color:var(--accent);color:var(--accent)}
+button.calck.op{background:var(--paper-2);color:var(--accent)}
+button.calck.eq{background:var(--accent);border-color:var(--accent);color:var(--paper)}
 .tdsnotes{margin-top:12px}
 .tdsnotes label{display:block;font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.12em;
   text-transform:uppercase;color:var(--ink-3);margin-bottom:5px}
@@ -4151,8 +4161,8 @@ function deckComplete(){
 }
 function nextItem(force){
   if(deck==='papers'){ if(mock){mock=null; if(mockTimer)clearInterval(mockTimer);} renderPapers(); renderRail(); renderLedger(); return; }
-  if(deck==='mock'&&subject==='math'){ if(!mock)buildMock(); return renderMock(); }
-  if(deck==='rmock'&&subject==='ela'){ if(!mock)buildRMock(); return renderMock(); }
+  if(deck==='mock'&&subject==='math'){ if(!mock)buildMock(); return mock.phase==='brief'?renderMockBrief():renderMock(); }
+  if(deck==='rmock'&&subject==='ela'){ if(!mock)buildRMock(); return mock.phase==='brief'?renderMockBrief():renderMock(); }
   if(deck==='testweek'&&subject==='ela'){ if(!plan)planStart(); return; }
   if(mock){ mock=null; if(mockTimer)clearInterval(mockTimer); }
   const dbs=deckBenchmarks();
@@ -4704,7 +4714,7 @@ function planMockIntro(){
     '<ul class="planlist"><li>Answer everything. A guess costs nothing.</li>'+
     '<li>If a question is eating time, choose your best option and move on. You can think about it again if time is left.</li>'+
     '<li>Read the question stem twice before you look at the options. That single habit prevents most careless losses.</li></ul>',
-    'Begin the 90 minutes →', ()=>{ mock=null; activePassage=null; deck='rmock'; subject='ela'; buildRMock(); renderMock(); });
+    'Begin the 90 minutes →', ()=>{ mock=null; activePassage=null; deck='rmock'; subject='ela'; buildRMock(); beginMock(); });
 }
 function planAfterMock(){
   plan.stage='review';
@@ -4812,7 +4822,7 @@ function buildMock(){
   const picked=SH(bs).slice(0,30);
   mock={reading:false,qs:picked.map(b=>({b,q:makeQ(b,Math.random()<.6?3:2)})),idx:0,ans:[],
     resp:[],flags:[],strike:[],notes:[],phase:'test',visits:0,pausedAt:null,pausedMs:0,spent:[],seen:[],start:Date.now(),dur:45*60*1000};
-  startMockTimer();
+  mock.phase='brief';
 }
 const ELA_GROUP=bm=>!bm?'AGV':(bm.indexOf('ELA.6.V')===0?'AGV':bm.split('.')[3]==='1'?'RPP':bm.split('.')[3]==='2'?'RIT':'AGV');
 function buildRMock(){
@@ -4839,7 +4849,7 @@ function buildRMock(){
   const vblock=[]; for(let i=0;i<best.vN;i++){ const b=PK(vb); vblock.push({b,q:makeQ(b,Math.random()<.6?3:2)}); }
   const all=SH(best.blocks.concat([vblock])).flat().slice(0,N);
   mock={reading:true,qs:all,idx:0,ans:[],resp:[],flags:[],strike:[],notes:[],phase:'test',visits:0,pausedAt:null,pausedMs:0,spent:[],seen:[],start:Date.now(),dur:90*60*1000};
-  startMockTimer();
+  mock.phase='brief';
 }
 /* One clock for both papers. Pausing freezes it by shifting mock.start on resume,
    so every elapsed-time calculation downstream stays honest. */
@@ -4863,9 +4873,18 @@ function startMockTimer(){
     }
   },1000);
 }
+function firstUnanswered(){
+  for(let i=0;i<mock.qs.length;i++) if(!(mock.resp[i]&&mock.resp[i].done))return i;
+  return -1;
+}
+/* Real pause rules (Cambium TA guide, Pause Rules): pausing logs the student out, and on
+   resume they land on the FIRST UNANSWERED item — not the one they were looking at.
+   Same day, they may still go back and change answers. A later day, they cannot. */
 function pauseMock(){
   if(!mock||mock.phase!=='test')return;
   captureResp();
+  const blanks=mock.qs.filter((q,i)=>!(mock.resp[i]&&mock.resp[i].done)).length;
+  if(blanks&&!confirm('Pause the test?\n\nOn the real FAST, pausing logs you out, and when you sign back in you are put on the FIRST UNANSWERED question, not this one.\n\nYou have '+blanks+' unanswered. Answer them before you pause.'))return;
   mock.pausedAt=Date.now(); mock.phase='paused';
   el('passagePanel').hidden=true;
   const bar=el('mockbar'); if(bar)bar.hidden=true;
@@ -4873,14 +4892,19 @@ function pauseMock(){
   const done=mock.qs.filter((q,i)=>mock.resp[i]&&mock.resp[i].done).length;
   el('pCode').innerHTML='MOCK PM'; el('pName').innerHTML='Paused'; el('pTier').innerHTML='the clock is stopped';
   el('figure').innerHTML=''; el('hintSlot').innerHTML=''; el('verdict').innerHTML='';
+  const blanks2=mock.qs.filter((q,i)=>!(mock.resp[i]&&mock.resp[i].done)).length;
   el('stem').innerHTML='<strong style="font-size:1.15em">The test is paused.</strong>'+
-    '<div class="qnote">Every answer so far is saved and the questions are hidden until you come back. '+
-    'On the real FAST a pause longer than <strong>20 minutes</strong> closes the session and a test administrator has to reopen it, so keep the break short.</div>';
+    '<div class="qnote">Every answer so far is saved. On the real FAST, Pause <strong>logs you out</strong> and you have to sign in again and be approved, '+
+    'so it is not a quick breather. When you come back you are put on the <strong>first unanswered question</strong>'+
+    (blanks2?' &mdash; which for you right now would be question '+(firstUnanswered()+1):'')+'.'+
+    '<br><br><strong>Come back the same day</strong> and you can still go back and change anything you already answered. '+
+    '<strong style="color:var(--bad)">Come back the next day and you cannot</strong> &mdash; previously answered items are locked, '+
+    'and you get 48 hours before the test submits itself. So finish a paper in one sitting, and never pause with blanks left behind.</div>';
   el('answer').innerHTML='<div class="tdsbar">'+
     '<button class="tds" id="tdsResume">&#9654; Resume test</button>'+
     '<span class="tdsgrow"></span>'+
-    '<span class="tdslegend">'+fmtClock(mockLeft())+' left &nbsp;&middot;&nbsp; on question '+(mock.idx+1)+' of '+mock.qs.length+
-    ' &nbsp;&middot;&nbsp; '+done+' answered</span></div>';
+    '<span class="tdslegend">'+fmtClock(mockLeft())+' left &nbsp;&middot;&nbsp; '+done+' of '+mock.qs.length+' answered'+
+    (blanks2?' &nbsp;&middot;&nbsp; resumes on question '+(firstUnanswered()+1):'')+'</span></div>';
   el('tdsResume').onclick=resumeMock;
   el('tdsResume').focus();
 }
@@ -4889,8 +4913,60 @@ function resumeMock(){
   mock.pausedMs=(mock.pausedMs||0)+(Date.now()-mock.pausedAt);
   mock.start+=Date.now()-mock.pausedAt;             // shift the start so elapsed time excludes the break
   mock.pausedAt=null; mock.phase='test';
+  const fu=firstUnanswered();                       // the real test resumes here, not where he left off
+  if(fu>=0){ mock.idx=fu; mock.resumedTo=fu; }
   const bar=el('mockbar'); if(bar)bar.hidden=false;
   renderMock();
+}
+/* The real paper opens with instructions, and the format rules are where strong students
+   lose marks. The maths side had none of this; it lived only inside the ELA plan. */
+function beginMock(){
+  mock.phase='test'; mock.start=Date.now(); mock.pausedMs=0; mock.pausedAt=null;
+  startMockTimer(); renderMock();
+}
+function renderMockBrief(){
+  showActions(false);
+  el('passagePanel').hidden=true; activePassage=null;
+  document.querySelector('main').classList.remove('reading');
+  if(el('mockbar'))el('mockbar').hidden=true;
+  const R=mock.reading, mins=Math.round(mock.dur/60000);
+  el('pCode').innerHTML='MOCK PM'; el('pName').innerHTML='Before you start'; el('pTier').innerHTML=mock.qs.length+' questions &middot; '+mins+' minutes';
+  el('figure').innerHTML=''; el('hintSlot').innerHTML=''; el('verdict').innerHTML='';
+  el('stem').innerHTML='<strong style="font-size:1.15em">'+mock.qs.length+' questions, '+mins+' minutes.</strong>'+
+    '<div class="qnote">That is about <strong>'+Math.round(mins*60/mock.qs.length)+' seconds</strong> a question on average. '+
+    'No Check, no Nudge and no Skip from here on, exactly like the real thing. Nothing is marked until you end the test.</div>';
+  el('answer').innerHTML=
+    '<h4 class="planh">The formats are where marks get lost, not the mathematics</h4>'+
+    '<ul class="planlist">'+
+      '<li><strong>Select-all</strong> &mdash; no part marks. Three right out of four scores zero. Check every option, every time.</li>'+
+      '<li><strong>Two-part</strong> &mdash; Part B has to back up your own Part A. If you cannot find the support, Part A is wrong.</li>'+
+      '<li><strong>Dropdowns and tables</strong> &mdash; every box has to be right. One stray box costs the whole item.</li>'+
+      '<li><strong>Never leave a blank.</strong> Nothing is deducted for a wrong answer, so a guess always beats an empty box.</li>'+
+    '</ul>'+
+    (R?'':'<h4 class="planh">The two tools you are given, and what they will not do</h4>'+
+      '<ul class="planlist">'+
+        '<li><strong>A four-function calculator.</strong> It has no order of operations &mdash; it works left to right as you press, '+
+          'so 2 + 3 &times; 4 gives 20 on it, not 14. Work out each piece separately.</li>'+
+        '<li><strong>The Formula sheet</strong> is conversions plus <span class="mn">V = lwh</span>. That is all. '+
+          'There is <strong>no triangle, parallelogram, trapezoid or surface-area formula</strong> &mdash; you rebuild those from a rectangle. '+
+          'Both are in the toolbar at the bottom of every question.</li>'+
+      '</ul>')+
+    '<h4 class="planh">Going back, flagging and pausing</h4>'+
+    '<ul class="planlist">'+
+      '<li><strong>Back and Next</strong> move between questions, and you can change any answer. Use <strong>Flag</strong> for anything you are unsure of; '+
+        'the review page at the end lists every flag and every blank.</li>'+
+      '<li><strong>Pause logs you out.</strong> Come back the same day and you can still review and change answers. '+
+        '<span style="color:var(--bad)">Come back the next day and you cannot</span> &mdash; everything you already answered is locked. '+
+        'Either way you resume on the first <em>unanswered</em> question, so do not pause with blanks behind you.</li>'+
+      '<li><strong>Harder questions are a good sign.</strong> The real test adapts. If it feels like it is getting harder, that is because you are getting them right.</li>'+
+    '</ul>'+
+    '<div class="builder" style="margin-top:22px"><button class="btn" id="beginMock">Start the '+mins+' minutes &rarr;</button>'+
+      '<button class="tog" id="bailMock">Not now</button></div>';
+  el('btnCheck').disabled=true; el('btnHint').disabled=true; el('btnSkip').disabled=true;
+  el('beginMock').onclick=beginMock;
+  el('bailMock').onclick=()=>{ mock=null; if(mockTimer)clearInterval(mockTimer);
+    deck=R?'RIT':'six'; subject=R?'ela':'math'; renderNav(); nextItem(); };
+  renderLedger();
 }
 function mockResp(){ return mock.resp[mock.idx]||(mock.resp[mock.idx]={}); }
 /* Every departure from an item runs through captureResp, so this is where the
@@ -4966,6 +5042,8 @@ function mockBar(){
     '<button class="tds tool'+(flagged?' on':'')+'" id="tdsFlag">&#9873; '+(flagged?'Flagged':'Flag')+'</button>'+
     '<button class="tds tool'+(mock.strikeOn?' on':'')+'" id="tdsStrike">S&#822;t&#822;r&#822;i&#822;k&#822;e&#822;</button>'+
     (mock.reading?'<button class="tds tool" id="tdsHl">&#9998; Highlight</button>':'')+
+    (mock.reading?'':'<button class="tds tool" id="tdsCalc">&#129518; Calculator</button>')+
+    (mock.reading?'':'<button class="tds tool" id="tdsForm">&#8730; Formula</button>')+
     '<button class="tds tool" id="tdsNote">&#128221; Notes</button>'+
     '<button class="tds tool" id="tdsZoom">&#128269; Zoom</button>'+
     '<button class="tds tool" id="tdsPause">&#9208; Pause</button>'+
@@ -4984,6 +5062,8 @@ function renderMockBar(){
     document.querySelector('.plate').style.fontSize=(mock.zoom*100)+'%'; };
   el('tdsNote').onclick=()=>toggleNotes();
   el('tdsPause').onclick=()=>pauseMock();
+  if(el('tdsCalc'))el('tdsCalc').onclick=()=>toggleCalc();
+  if(el('tdsForm'))el('tdsForm').onclick=()=>toggleFormula();
   if(el('tdsHl'))el('tdsHl').onclick=()=>toggleHighlight();
   el('tdsSum').onclick=()=>{
     const d=el('tdsDrop');
@@ -5019,6 +5099,67 @@ function toggleNotes(){
   el('mockbar').appendChild(n);
   n.querySelector('textarea').value=mock.notes[mock.idx]||'';
   n.querySelector('textarea').oninput=e=>{ mock.notes[mock.idx]=e.target.value; };
+}
+/* Grade 6 FAST Mathematics provides a FOUR-FUNCTION calculator and the Formula tool
+   (Cambium TA guide, Global Tools). A four-function calculator has no order of operations:
+   it evaluates as you press, so 2 + 3 x 4 gives 20, not 14. That is worth meeting here
+   rather than on the day. */
+let calcState=null;
+function calcFmt(v){
+  if(!isFinite(v))return 'Error';
+  let t=String(Math.round(v*1e10)/1e10);
+  return t.length>14?v.toPrecision(10):t;
+}
+function toggleCalc(){
+  let box=el('tdsCalcBox');
+  if(box){ box.remove(); if(el('tdsCalc'))el('tdsCalc').classList.remove('on'); return; }
+  calcState={acc:null,op:null,entry:'0',fresh:true};
+  box=document.createElement('div'); box.id='tdsCalcBox'; box.className='tdsdrop calcbox';
+  const keys=[['C','+/-','%','÷'],['7','8','9','×'],['4','5','6','−'],['1','2','3','+'],['0','.','=','']];
+  box.innerHTML='<div class="calcread" id="calcRead">0</div><div class="calcpad">'+
+    keys.flat().map(k=>k?'<button class="calck'+(/[÷×−+=]/.test(k)?' op':'')+(k==='='?' eq':'')+'" data-k="'+k+'">'+k+'</button>':'<span></span>').join('')+
+    '</div><div class="tdslegend">Four-function, like the one in the testing platform. It has no order of operations &mdash; '+
+    'it works left to right as you press, so 2 + 3 &times; 4 gives 20 here, not 14. Do each piece on its own.</div>';
+  el('mockbar').appendChild(box);
+  if(el('tdsCalc'))el('tdsCalc').classList.add('on');
+  const read=()=>{ el('calcRead').textContent=calcState.entry; };
+  const apply=()=>{
+    const b=parseFloat(calcState.entry), a=calcState.acc;
+    if(calcState.op===null||a===null)return b;
+    return calcState.op==='+'?a+b:calcState.op==='−'?a-b:calcState.op==='×'?a*b:a/b;
+  };
+  box.querySelectorAll('.calck').forEach(b=>b.onclick=()=>{
+    const k=b.dataset.k, C=calcState;
+    if(k==='C'){ calcState={acc:null,op:null,entry:'0',fresh:true}; return read(); }
+    if(/[0-9]/.test(k)){ C.entry=(C.fresh||C.entry==='0')?k:C.entry+k; C.fresh=false; return read(); }
+    if(k==='.'){ if(C.fresh){C.entry='0.';C.fresh=false;} else if(C.entry.indexOf('.')<0)C.entry+='.'; return read(); }
+    if(k==='+/-'){ C.entry=C.entry.charAt(0)==='-'?C.entry.slice(1):'-'+C.entry; return read(); }
+    if(k==='%'){ C.entry=calcFmt(parseFloat(C.entry)/100); C.fresh=true; return read(); }
+    if(k==='='){ const v=apply(); C.acc=null; C.op=null; C.entry=calcFmt(v); C.fresh=true; return read(); }
+    const v=apply();                                  // an operator key evaluates what is pending first
+    C.acc=v; C.op=k; C.entry=calcFmt(v); C.fresh=true; read();
+  });
+}
+function toggleFormula(){
+  let box=el('tdsFormBox');
+  if(box){ box.remove(); if(el('tdsForm'))el('tdsForm').classList.remove('on'); return; }
+  box=document.createElement('div'); box.id='tdsFormBox'; box.className='tdsdrop';
+  box.innerHTML='<label style="display:block;font-family:\'IBM Plex Mono\',monospace;font-size:10px;letter-spacing:.12em;'+
+      'text-transform:uppercase;color:var(--ink-3);margin-bottom:8px">Formula &mdash; everything Florida gives you</label>'+
+    '<div class="refgrid" style="margin:0">'+
+      '<div><h4>Customary</h4><ul class="reflist"><li>1 ft = 12 in</li><li>1 yd = 3 ft</li><li>1 mi = 5,280 ft</li>'+
+      '<li>1 mi = 1,760 yd</li><li>1 cup = 8 fl oz</li><li>1 pt = 2 cups</li><li>1 qt = 2 pt</li>'+
+      '<li>1 gal = 4 qt</li><li>1 lb = 16 oz</li><li>1 ton = 2,000 lb</li></ul></div>'+
+      '<div><h4>Metric</h4><ul class="reflist"><li>1 m = 100 cm</li><li>1 m = 1000 mm</li><li>1 km = 1000 m</li>'+
+      '<li>1 L = 1000 mL</li><li>1 g = 1000 mg</li><li>1 kg = 1000 g</li></ul>'+
+      '<h4>Time</h4><ul class="reflist"><li>1 min = 60 s</li><li>1 h = 60 min</li><li>1 day = 24 h</li>'+
+      '<li>1 wk = 7 days</li><li>1 yr = 365 days</li><li>1 yr = 52 wk</li></ul></div>'+
+      '<div><h4>Formulas</h4><ul class="reflist"><li><strong>Rectangular prism</strong><br><span class="mn">V = lwh</span> or <span class="mn">V = Bh</span></li></ul>'+
+      '<div class="tdslegend" style="margin-top:10px">That is the whole sheet. No triangle, parallelogram, trapezoid or surface area &mdash; '+
+      'those you rebuild from a rectangle.</div></div>'+
+    '</div>';
+  el('mockbar').appendChild(box);
+  if(el('tdsForm'))el('tdsForm').classList.add('on');
 }
 function toggleHighlight(){
   mock.hlOn=!mock.hlOn;
@@ -5272,7 +5413,7 @@ function finishMock(){
   el('copyPaper').onclick=()=>copyPaper(paper);
   el('filePaper').onclick=()=>downloadPaper(paper);
   el('openPapers').onclick=()=>{ mock=null; activePassage=null; deck='papers'; renderNav(); nextItem(); };
-  el('againMock').onclick=()=>{ mock=null; activePassage=null; if(wasReading)buildRMock(); else buildMock(); renderMock(); };
+  el('againMock').onclick=()=>{ mock=null; activePassage=null; if(wasReading)buildRMock(); else buildMock(); renderMockBrief(); };
   el('leaveMock').onclick=()=>{ mock=null; activePassage=null; deck=wasReading?'RIT':'six'; renderNav(); nextItem(); };
   renderLedger();
 }
