@@ -168,11 +168,23 @@ button.btn.ghost:hover:not(:disabled){border-color:var(--ink-3);color:var(--ink)
 .rightans .ralab{font-family:"IBM Plex Mono",monospace;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
 .rightans .raval{font-size:20px;font-weight:600;color:var(--ink)}
 main.reading>.passage{margin-bottom:14px}
+/* One continuous test frame: the passage and the questions share a panel,
+   equal height, with a divider between them and no page background showing through. */
+main.testframe{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);
+  box-shadow:var(--shadow);overflow:hidden}
+main.testframe>.passage,main.testframe>.plate{border:0;border-radius:0;box-shadow:none;background:transparent}
+main.testframe>.passage{margin-bottom:0;border-bottom:1px solid var(--line)}
+main.testframe>.plate>.plate-head{background:var(--paper-2)}
 @media (min-width:1080px){
   main.reading{display:grid;grid-template-columns:minmax(360px,1fr) minmax(430px,1.05fr);gap:14px;align-items:start}
   main.reading>.passage{position:sticky;top:12px;margin-bottom:0}
   main.reading>.passage .passage-body{max-height:calc(100vh - 250px)}
   main.reading>.ledger,main.reading>#coach,main.reading>footer{grid-column:1/-1}
+  main.reading.testframe{gap:0;align-items:stretch}
+  main.reading.testframe>.passage{position:static;border-bottom:0;border-right:1px solid var(--line);
+    display:flex;flex-direction:column}
+  main.reading.testframe>.passage .passage-body{max-height:none;flex:1 1 auto;overflow-y:auto}
+  main.reading.testframe>.ledger,main.reading.testframe>#coach,main.reading.testframe>footer{display:none}
 }
 .passage-body{-webkit-mask-image:linear-gradient(to bottom,#000 calc(100% - 26px),transparent);
   mask-image:linear-gradient(to bottom,#000 calc(100% - 26px),transparent)}
@@ -5050,6 +5062,7 @@ function renderNav(){
 function renderRail(){
   const all=deckBenchmarks(), r=el('rail'); if(!r)return;
   if(deck==='papers'){ r.style.display='none'; r.innerHTML=''; return; }
+  if(mock&&mock.phase!=='done'){ r.style.display='none'; r.innerHTML=''; return; }   // no practice furniture mid-test
   let bs=all;
   if(all.length>8){                                   // rank by need, keep the current one visible
     const score=b=>{const q=bst(b.code);return (q.secured?100:0)+(q.tried?q.right/q.tried:0.4)*10+(curB&&curB.code===b.code?-99:0);};
@@ -5191,7 +5204,7 @@ function nextItem(force){
   answered=false;picked=null;multiPick=[];orderPick=[];plotPick=null;pointPick=null;cmpPick=null;
   ineqPick={k:null,closed:true,dir:'right'};twoPick={A:null,B:null};inlinePick=[];tablePick=[];hotPick=[];dragPick=[];
   el('verdict').innerHTML='';el('hintSlot').innerHTML='';
-  if(curB.passage){ startPassage(curB.passage); } else { el('passagePanel').hidden=true; document.querySelector('main').classList.remove('reading'); activePassage=null; cur=makeQ(curB,bst(curB.code).tier); renderItem(); }
+  if(curB.passage){ startPassage(curB.passage); } else { el('passagePanel').hidden=true; document.querySelector('main').classList.remove('reading','testframe'); activePassage=null; cur=makeQ(curB,bst(curB.code).tier); renderItem(); }
   renderRail();renderLedger();
 }
 function startPassage(p){
@@ -6328,12 +6341,12 @@ function resumeMock(){
    lose marks. The maths side had none of this; it lived only inside the ELA plan. */
 function beginMock(){
   mock.phase='test'; mock.start=Date.now(); mock.pausedMs=0; mock.pausedAt=null;
-  startMockTimer(); renderMock();
+  startMockTimer(); renderMock(); renderRail();
 }
 function renderMockBrief(){
   showActions(false);
   el('passagePanel').hidden=true; activePassage=null;
-  document.querySelector('main').classList.remove('reading');
+  document.querySelector('main').classList.remove('reading','testframe');
   if(el('mockbar'))el('mockbar').hidden=true;
   const R=mock.reading, mins=Math.round(mock.dur/60000);
   el('pCode').innerHTML='MOCK PM'; el('pName').innerHTML='Before you start'; el('pTier').innerHTML=mock.qs.length+' questions &middot; '+mins+' minutes';
@@ -6369,6 +6382,7 @@ function renderMockBrief(){
     '<div class="builder" style="margin-top:22px"><button class="btn" id="beginMock">Start the '+mins+' minutes &rarr;</button>'+
       '<button class="tog" id="bailMock">Not now</button></div>';
   el('btnCheck').disabled=true; el('btnHint').disabled=true; el('btnSkip').disabled=true;
+  renderRail();                                  // no practice furniture on the briefing either
   el('beginMock').onclick=beginMock;
   el('bailMock').onclick=()=>{ mock=null; if(mockTimer)clearInterval(mockTimer);
     deck=R?'RIT':'six'; subject=R?'ela':'math'; renderNav(); nextItem(); };
@@ -6639,12 +6653,13 @@ function renderMock(){
     curB=ALLB['P.'+it.p.id];
     if(!activePassage||activePassage.id!==it.p.id){ activePassage=it.p; renderPassage(it.p); wireHighlight(); }
     el('passagePanel').hidden=false;
+    document.querySelector('main').classList.add('testframe');
     // build ONCE and keep it: passageItemToCur reshuffles the options every call,
     // so rebuilding here would move the answer out from under a saved response
     cur=it.q||(it.q=passageItemToCur(it.p,it.i));
   } else {
     curB=it.b; cur=mockBuild(it); el('passagePanel').hidden=true;
-    document.querySelector('main').classList.remove('reading'); activePassage=null;
+    document.querySelector('main').classList.remove('reading','testframe'); activePassage=null;
   }
   answered=false;
   picked=null;multiPick=[];orderPick=[];plotPick=null;pointPick=null;cmpPick=null;ineqPick={k:null,closed:true,dir:'right'};twoPick={A:null,B:null};inlinePick=[];tablePick=[];hotPick=[];dragPick=[];
@@ -6836,6 +6851,7 @@ function gradeMock(){
 }
 function finishMock(){
   if(mockTimer)clearInterval(mockTimer);
+  mock.phase='done';                              // the paper is over; the practice rail comes back
   while(mock.ans.length<mock.qs.length){ const it=mock.qs[mock.ans.length], n=mock.ans.length+1;
     mock.ans.push({n,code:it.b?it.b.code:'P.'+it.p.id,short:it.b?it.b.short:it.p.title,ok:false,answered:false,
       flagged:false,sec:0,visits:0,changed:0,firstOk:false,stem:'',yours:'',key:''}); }
@@ -6876,6 +6892,8 @@ function finishMock(){
   el('verdict').innerHTML='<div class="verdict"><h3>What this tells you</h3>'+diagnose(paper)+
     '<p>A mock paper measures pacing and stamina, which normal practice cannot. Compare the <em>seconds per question</em> and the strand breakdown across papers &mdash; those move long before a scale score does.</p></div>';
   el('btnCheck').disabled=true; el('btnHint').disabled=true; el('btnSkip').disabled=true;
+  document.querySelector('main').classList.remove('reading','testframe');
+  renderRail();
   if(plan&&plan.stage==='mock'){ if(mockTimer)clearInterval(mockTimer); planAfterMock(); return; }
   const wasReading=mock.reading;
   showActions(false);
@@ -7053,7 +7071,7 @@ function repeatMisses(){
 function renderPapers(){
   showActions(false);
   el('passagePanel').hidden=true; activePassage=null;
-  document.querySelector('main').classList.remove('reading');
+  document.querySelector('main').classList.remove('reading','testframe');
   if(el('mockbar'))el('mockbar').hidden=true;
   el('pCode').innerHTML='REVIEW'; el('pName').innerHTML='Mock papers'; el('pTier').innerHTML='';
   el('figure').innerHTML=''; el('hintSlot').innerHTML=''; el('verdict').innerHTML='';
