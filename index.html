@@ -323,6 +323,45 @@ button.eqk .eqfr.mini .eqnum,button.eqk .eqfr.mini .eqden{min-width:.9em;min-hei
 button.eqswap{background:none;border:0;color:var(--accent);font:inherit;font-size:12.5px;cursor:pointer;
   text-decoration:underline;text-underline-offset:3px;padding:0}
 @media (max-width:640px){ .eqpad{max-width:100%;gap:7px} button.eqk{min-height:52px} .eqfield{font-size:21px} }
+/* ---------- FAST-style report ---------- */
+.fastrep{margin-top:18px;padding:20px;background:var(--paper);border:1px solid var(--line);border-radius:var(--r)}
+.frtop{border-bottom:2px solid var(--ink);padding-bottom:12px;margin-bottom:14px}
+.frkick{font-family:"IBM Plex Mono",monospace;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);display:block}
+.frtitle{font-family:Spectral,Georgia,serif;font-size:24px;font-weight:600;letter-spacing:-.01em;margin:4px 0 2px}
+.frmeta{font-size:12.5px;color:var(--ink-2)}
+.frhead{display:flex;flex-wrap:wrap;gap:0;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin-bottom:8px}
+.frhead>div{flex:1 1 140px;padding:11px 14px;border-right:1px solid var(--line);background:var(--paper-2)}
+.frhead>div:last-child{border-right:0}
+.frhk{display:block;font-family:"IBM Plex Mono",monospace;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+.frhv{display:block;font-family:"IBM Plex Mono",monospace;font-size:22px;font-weight:600;color:var(--ink);margin-top:3px}
+.frscale{display:flex;gap:16px;align-items:stretch;margin-top:10px}
+.frcol{position:relative;flex:0 0 96px;min-height:430px;border-left:2px solid var(--ink-3);margin-left:42px}
+.frmark{position:absolute;left:-44px;transform:translateY(-50%);font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--ink-2);
+  width:38px;text-align:right}
+.frmark::after{content:'';position:absolute;right:-8px;top:50%;width:6px;border-top:1px solid var(--ink-3)}
+.frfill{position:absolute;left:-5px;width:12px;background:var(--accent);border-radius:2px;min-height:5px}
+.frmeets{position:absolute;left:14px;right:2px;font-family:"IBM Plex Mono",monospace;font-size:9px;letter-spacing:.06em;
+  line-height:1.25;text-transform:uppercase;color:var(--good);border-top:1px dashed var(--good-line);padding-top:3px}
+.frlevels{flex:1 1 auto;display:flex;flex-direction:column;gap:5px}
+.frlv{border:1px solid var(--line);border-left:3px solid var(--line);border-radius:var(--r);padding:9px 13px;background:var(--paper-2)}
+.frlv.on{border-left-color:var(--accent);background:var(--accent-soft);border-color:var(--accent-line)}
+.frlvhead{font-size:13.5px;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.frhere{font-family:"IBM Plex Mono",monospace;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+.frlvtxt{font-size:12px;color:var(--ink-2);line-height:1.45;margin-top:3px}
+.frdotcell{min-width:190px}
+.frdot{position:relative;height:22px;background:linear-gradient(90deg,var(--bad-soft),var(--paper-2) 50%,var(--good-soft));
+  border:1px solid var(--line);border-radius:11px}
+.frdot i{position:absolute;top:50%;transform:translateY(-50%);height:4px;background:var(--accent-line);border-radius:2px}
+.frdot b{position:absolute;top:50%;transform:translate(-50%,-50%);width:11px;height:11px;border-radius:50%;background:var(--ink);border:2px solid var(--paper)}
+.catmark{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+  padding:3px 9px;border-radius:var(--r);border:1px solid var(--line);white-space:nowrap}
+.catmark.above{color:var(--good);border-color:var(--good-line);background:var(--good-soft)}
+.catmark.at{color:var(--accent);border-color:var(--accent-line);background:var(--accent-soft)}
+.catmark.below{color:var(--bad);border-color:var(--bad-line);background:var(--bad-soft)}
+.frepline{font-size:14px;color:var(--ink-2);max-width:70ch;margin:12px 0}
+.frepnote{margin-top:16px;padding:13px 15px;background:var(--paper-2);border:1px dashed var(--line);border-radius:var(--r);
+  font-size:13px;color:var(--ink-2);line-height:1.55;max-width:78ch}
+@media (max-width:640px){ .frscale{flex-direction:column} .frcol{min-height:280px;margin-left:44px} .frdotcell{min-width:130px} }
 .calcbox{max-width:290px}
 .calcread{font-family:"IBM Plex Mono",monospace;font-size:24px;text-align:right;padding:10px 12px;
   background:var(--paper);border:1px solid var(--line);border-radius:var(--r);margin-bottom:10px;
@@ -6416,7 +6455,10 @@ function renderMockBrief(){
    per item the first time it is answered, and builds each unseen item at that tier.
    Nothing is shown to the student, exactly as on the real test. */
 function mockTier(){ return Math.max(1,Math.min(3,Math.round(mock.ability||2))); }
-function mockBuild(it){ return it.q||(it.q=makeQ(it.b,mockTier())); }
+function mockBuild(it){
+  if(!it.q){ it.tier=mockTier(); it.q=makeQ(it.b,it.tier); }
+  return it.q;
+}
 function mockAbilityUpdate(i,right){
   if(mock.scored&&mock.scored[i])return;                 // one adjustment per item, on the first answer
   mock.scored=mock.scored||{}; mock.scored[i]=true;
@@ -6859,6 +6901,7 @@ function gradeMock(){
       n:i+1, code:bm, short:(it.p&&ELA_NAMES[bm])?ELA_NAMES[bm]:curB.short, ok,
       answered:!!(r.v!==undefined&&r.v!==null&&r.done),
       flagged:!!mock.flags[i],
+      tier:it.p?2:(it.tier||2),
       sec:Math.round((mock.spent[i]||0)/1000),
       visits:mock.seen[i]||0,
       changed:r.changed||0,
@@ -6896,6 +6939,7 @@ function finishMock(){
     minutes:Math.round((Date.now()-mock.start)/60000),
     pausedMin:Math.round((mock.pausedMs||0)/60000),
     timedOut:!!mock.timedOut, warned:mock.warned||0,
+    ability:Math.round((mock.ability==null?2:mock.ability)*100)/100,
     items:mock.ans.map(a=>Object.assign({},a))
   };
   ST.papers=ST.papers||[]; ST.papers.unshift(paper); if(ST.papers.length>15)ST.papers.length=15;
@@ -6913,6 +6957,7 @@ function finishMock(){
       [...new Set(missed.map(a=>a.short))].slice(0,12).join(' &middot; ')+
       (new Set(missed.map(a=>a.short)).size>12?' &middot; and '+(new Set(missed.map(a=>a.short)).size-12)+' more':'')+'</div>':'')+
     '<div class="builder" style="margin-top:16px"><button class="tog" id="againMock">Take another paper</button>'+
+    '<button class="btn" id="fastRep">FAST-style report</button>'+
     '<button class="tog" id="openPapers">Review papers</button>'+
     '<button class="tog" id="copyPaper">Copy for review</button>'+
     '<button class="tog" id="filePaper">Save as a file</button>'+
@@ -6926,6 +6971,12 @@ function finishMock(){
   if(plan&&plan.stage==='mock'){ if(mockTimer)clearInterval(mockTimer); planAfterMock(); return; }
   const wasReading=mock.reading;
   showActions(false);
+  el('fastRep').onclick=()=>{
+    const host=el('verdict');
+    if(el('fastRepBox')){ el('fastRepBox').remove(); return; }
+    const d=document.createElement('div'); d.id='fastRepBox'; d.innerHTML=fastReportHTML(paper);
+    host.appendChild(d); d.scrollIntoView({block:'start',behavior:'smooth'});
+  };
   el('copyPaper').onclick=()=>copyPaper(paper);
   el('filePaper').onclick=()=>downloadPaper(paper);
   el('openPapers').onclick=()=>{ mock=null; activePassage=null; deck='papers'; renderNav(); nextItem(); };
@@ -7087,6 +7138,129 @@ function importPapers(raw){
   save();
   return added;
 }
+/* ============================================================
+   FAST-STYLE REPORT
+   Cut scores are the real ones: State Board of Education, 10 January 2024.
+   The scale score is an ESTIMATE — the real one comes from an item-response
+   model on a calibrated item pool, which we do not have. Everything the
+   estimate rests on is printed on the report so it can be argued with.
+   ============================================================ */
+const FAST_SCALE={
+  math:{name:'Grade 6 Mathematics',min:168,max:287,
+        cuts:[{lv:1,lo:168,hi:212},{lv:2,lo:213,hi:228},{lv:3,lo:229,hi:238},{lv:4,lo:239,hi:253},{lv:5,lo:254,hi:287}]},
+  ela: {name:'Grade 6 ELA Reading',min:161,max:284,
+        cuts:[{lv:1,lo:161,hi:208},{lv:2,lo:209,hi:224},{lv:3,lo:225,hi:236},{lv:4,lo:237,hi:249},{lv:5,lo:250,hi:284}]}
+};
+/* Florida's own names and wording, taken from his PM1 report */
+const LEVEL_NAME={1:'Well Below Grade Level',2:'Below Grade Level',3:'On Grade Level',4:'Proficient',5:'Exemplary'};
+const LEVEL_TEXT={
+ 5:'Students who score in Level 5 demonstrate exemplary success with the challenging content on the B.E.S.T. Standards. They are highly likely to excel in the next grade.',
+ 4:'Students who score in Level 4 demonstrate proficient success with the challenging content on the B.E.S.T. Standards. They are likely to excel in the next grade.',
+ 3:'Students who score in Level 3 demonstrate on grade level success with the challenging content on the B.E.S.T. Standards. They may need additional support to excel in the next grade.',
+ 2:'Students who score in Level 2 demonstrate below grade level skills and are not yet demonstrating On Grade Level success with the challenging content on the B.E.S.T. Standards.',
+ 1:'Students who score in Level 1 demonstrate well below grade level skills and are not yet demonstrating On Grade Level success with the challenging content on the B.E.S.T. Standards.'};
+const COMPARE={math:[['Florida',215],['Miami-Dade',217]],ela:[]};
+/* adjusted performance -> scale, through the real level boundaries.
+   The maths curve carries one extra anchor near the top of the scale, which is why
+   it bends where it does. */
+function scaleAnchors(sub){
+  const S=FAST_SCALE[sub];
+  const a=[[0,S.min],[0.25,S.cuts[1].lo],[0.45,S.cuts[2].lo],[0.60,S.cuts[3].lo],[0.72,S.cuts[4].lo]];
+  if(sub==='math')a.push([0.84,280]);
+  a.push([1,S.max]);
+  return a;
+}
+function estimateScale(pp){
+  const sub=pp.subject==='ela'?'ela':'math', S=FAST_SCALE[sub];
+  const n=pp.tot||1, pct=(pp.right||0)/n;
+  const tiers=(pp.items||[]).map(a=>a.tier||2);
+  const meanTier=tiers.length?tiers.reduce((x,y)=>x+y,0)/tiers.length:2;
+  const tierNorm=Math.max(0,Math.min(1,(meanTier-1)/2));
+  // the same score on harder questions means more; at the easiest tier it is discounted
+  const adj=pct*(0.78+0.22*tierNorm);
+  const A=scaleAnchors(sub);
+  let sc=S.min;
+  for(let i=1;i<A.length;i++){
+    if(adj<=A[i][0]||i===A.length-1){
+      const [x0,y0]=A[i-1],[x1,y1]=A[i];
+      sc=y0+(Math.min(adj,x1)-x0)/(x1-x0)*(y1-y0); break;
+    }
+  }
+  sc=Math.round(Math.max(S.min,Math.min(S.max,sc)));
+  const sem=Math.round(40/Math.sqrt(n));                 // shorter paper, wider band
+  const lo=Math.max(S.min,sc-sem), hi=Math.min(S.max,sc+sem);
+  const lvOf=v=>(S.cuts.find(c=>v>=c.lo&&v<=c.hi)||S.cuts[0]).lv;
+  return {sub,S,pct,meanTier,adj,scale:sc,lo,hi,sem,level:lvOf(sc),loLevel:lvOf(lo),hiLevel:lvOf(hi)};
+}
+function fastReportHTML(pp){
+  return fastReportBody(pp);
+}
+function fastReportBody(pp){
+  const E=estimateScale(pp), S=E.S;
+  const span=S.max-S.min, pos=v=>((v-S.min)/span*100);
+  // the vertical scale, the way the real report draws it
+  const marks=[S.max].concat(S.cuts.slice(1).map(c=>c.lo)).concat([S.min]);
+  const rows=[5,4,3,2,1].map(lv=>{
+    const c=S.cuts.find(x=>x.lv===lv);
+    return '<div class="frlv'+(lv===E.level?' on':'')+'">'+
+      '<div class="frlvhead"><strong>Level '+lv+' '+LEVEL_NAME[lv]+'</strong>'+
+      (lv===E.level?'<span class="frhere">his estimate</span>':'')+'</div>'+
+      '<div class="frlvtxt">'+LEVEL_TEXT[lv]+'</div></div>';
+  }).join('');
+  const cats={};
+  (pp.items||[]).forEach(a=>{ const k=strandOf(a.code,E.sub==='ela');
+    cats[k]=cats[k]||{r:0,t:0}; cats[k].t++; if(a.ok)cats[k].r++; });
+  const catRow=k=>{ const c=cats[k], p=c.t?c.r/c.t:0;
+    // a short paper cannot separate a category finely, so show a band like the real report
+    const half=Math.max(8,Math.round(45/Math.sqrt(Math.max(1,c.t))));
+    const lo=Math.max(0,Math.round(p*100)-half), hi=Math.min(100,Math.round(p*100)+half);
+    const verdict=lo>=60?'Above the Standard':hi<60?'Below the Standard':'At the Standard';
+    return '<tr><td><strong>'+k+'</strong><span class="bcode">'+c.r+' of '+c.t+' correct</span></td>'+
+      '<td class="frdotcell"><div class="frdot"><i style="left:'+lo+'%;width:'+(hi-lo)+'%"></i>'+
+        '<b style="left:'+Math.round(p*100)+'%"></b></div></td>'+
+      '<td><span class="catmark '+verdict.split(' ')[0].toLowerCase()+'">'+verdict+'</span></td></tr>'; };
+  const prior=(ST.papers||[]).filter(x=>x.subject===pp.subject&&x.ts<pp.ts).sort((a,b)=>b.ts-a.ts)[0];
+  const priorE=prior?estimateScale(prior):null;
+  const cmp=COMPARE[E.sub]||[];
+  return '<div class="fastrep">'+
+    '<div class="frtop"><div><div class="frkick">Practice Report &mdash; modelled on the FAST Individual Student Report</div>'+
+      '<div class="frtitle">'+S.name+'</div>'+
+      '<div class="frmeta">Date taken: '+new Date(pp.ts).toLocaleDateString('en-US')+
+      ' &middot; Practice paper, '+pp.tot+' questions</div></div></div>'+
+    '<div class="frhead">'+
+      '<div><span class="frhk">Estimated Scale Score</span><span class="frhv">'+E.lo+'&ndash;'+E.hi+'</span></div>'+
+      '<div><span class="frhk">Achievement Level</span><span class="frhv">Level '+E.level+'</span></div>'+
+      '<div><span class="frhk">Standard</span><span class="frhv">'+(E.level>=3?'Meets':'Does not meet')+'</span></div>'+
+    '</div>'+
+    '<h4 class="planh">How did he do on this paper?</h4>'+
+    '<div class="frscale"><div class="frcol">'+
+      marks.map((m,k)=>'<div class="frmark" style="top:'+(100-pos(m))+'%">'+m+'</div>').join('')+
+      '<div class="frfill" style="bottom:'+pos(E.lo)+'%;height:'+Math.max(1.5,(E.hi-E.lo)/span*100)+'%"></div>'+
+      '<div class="frmeets" style="bottom:'+pos(S.cuts[2].lo)+'%">Meets State Standard</div>'+
+    '</div><div class="frlevels">'+rows+'</div></div>'+
+    '<h4 class="planh">How did he do on different areas of the paper?</h4>'+
+    '<p class="frepline">The dot is his result in each reporting category. The bar around it is the range you would expect if he took a paper this length several times.</p>'+
+    '<div class="tablescroll"><table class="review"><thead><tr><th>Category</th><th>Below &mdash;&mdash; Above</th><th>Standing</th></tr></thead><tbody>'+
+      Object.keys(cats).map(catRow).join('')+'</tbody></table></div>'+
+    (cmp.length?'<h4 class="planh">How does it compare?</h4>'+
+      '<p class="frepline">State and district averages for this test, for scale.</p>'+
+      '<div class="tablescroll"><table class="review"><thead><tr><th>Comparison</th><th class="num">Average</th></tr></thead><tbody>'+
+      cmp.map(c=>'<tr><td>'+c[0]+'</td><td class="num mono">'+c[1]+'</td></tr>').join('')+
+      '<tr><td><strong>This practice paper</strong></td><td class="num mono"><strong>'+E.lo+'&ndash;'+E.hi+'</strong></td></tr>'+
+      '</tbody></table></div>':'')+
+    (priorE?'<p class="frepline"><strong>Against his previous paper</strong> ('+new Date(prior.ts).toLocaleDateString()+'): '+
+      priorE.lo+'&ndash;'+priorE.hi+' (Level '+priorE.level+') &rarr; '+E.lo+'&ndash;'+E.hi+' (Level '+E.level+').</p>':'')+
+    '<div class="frepnote"><strong>Read this as a practice estimate, not a Florida score.</strong> '+
+      'The real test is adaptive and scored with an item-response model on a calibrated item pool, which this app does not have. '+
+      'The <em>level</em> and the <em>direction of travel</em> are worth something; the exact number is not.<br><br>'+
+      '<strong>How the estimate was reached.</strong> He answered <strong>'+pp.right+' of '+pp.tot+'</strong> ('+Math.round(E.pct*100)+'%), '+
+      'on questions running at an average difficulty of <strong>'+(Math.round(E.meanTier*10)/10)+' of 3</strong>. '+
+      'Weighted for that difficulty gives '+Math.round(E.adj*100)+'%, read against the real Florida cut scores for '+S.name+
+      ' (State Board of Education, 10 January 2024): '+S.cuts.map(c=>'Level '+c.lv+' '+c.lo+'&ndash;'+c.hi).join(' &middot; ')+'. '+
+      'The band is &plusmn;'+E.sem+' points because a '+pp.tot+'-question paper cannot pin a score tighter than that.'+
+      (E.sub==='math'?' The maths curve carries one extra anchor near the top, where the real scale compresses.':'')+
+      '</div></div>';
+}
 /* ---------- the Review Papers screen ---------- */
 let openPaper=null, missDeck=null;
 function repeatMisses(){
@@ -7211,6 +7385,7 @@ function renderOnePaper(pp){
       (pp.items||[]).map(row).join('')+'</tbody></table></div>'+
     '<div class="builder" style="margin-top:16px">'+
       (S.wrong.length?'<button class="btn" id="drillThis">Practise these '+S.wrong.length+' now</button>':'')+
+      '<button class="btn" id="fastThis">FAST-style report</button>'+
       '<button class="tog" id="copyThis">Copy for review</button>'+
       '<button class="tog" id="fileThis">Save as a file</button>'+
       '<button class="tog" id="backPapers">All papers</button>'+
@@ -7218,6 +7393,11 @@ function renderOnePaper(pp){
     '<div class="tdsnotes" id="paperOut" hidden></div>';
   if(el('drillThis'))el('drillThis').onclick=()=>startMissDrill(
     [...new Set(S.wrong.map(a=>a.code))],'Missed on the paper of '+new Date(pp.ts).toLocaleDateString());
+  el('fastThis').onclick=()=>{
+    if(el('fastRepBox')){ el('fastRepBox').remove(); return; }
+    const d=document.createElement('div'); d.id='fastRepBox'; d.innerHTML=fastReportHTML(pp);
+    el('verdict').appendChild(d); d.scrollIntoView({block:'start',behavior:'smooth'});
+  };
   el('copyThis').onclick=()=>copyPaper(pp);
   el('fileThis').onclick=()=>downloadPaper(pp);
   el('backPapers').onclick=()=>{ openPaper=null; renderPapers(); };
