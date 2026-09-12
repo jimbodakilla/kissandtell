@@ -272,6 +272,43 @@ table.review td{vertical-align:top}
 .rvstem{font-size:12.5px;color:var(--ink-2);margin-top:4px;max-width:52ch;line-height:1.45}
 .rvans{font-size:13px}
 @media(max-width:620px){ .rvstem{display:none} table.review{min-width:470px} }
+/* ---------- equation editor ---------- */
+.eqfield{min-width:190px;min-height:56px;display:flex;align-items:center;flex-wrap:wrap;gap:1px;
+  font-family:"IBM Plex Mono",monospace;font-size:23px;line-height:1.1;
+  padding:8px 14px;background:var(--paper);border:1px solid var(--line);
+  border-bottom:2px solid var(--accent);border-radius:var(--r);color:var(--ink);cursor:text}
+.eqfield:focus{outline:2px solid var(--accent);outline-offset:2px}
+.eqfield.right{border-color:var(--good);border-bottom-color:var(--good);background:var(--good-soft)}
+.eqfield.wrong{border-color:var(--bad);border-bottom-color:var(--bad);background:var(--bad-soft)}
+.eqch{white-space:pre}
+.eqcar{display:inline-block;width:0;border-left:2px solid var(--accent);height:1.05em;
+  vertical-align:middle;animation:eqblink 1.06s step-end infinite}
+@keyframes eqblink{50%{opacity:0}}
+@media (prefers-reduced-motion:reduce){.eqcar{animation:none}}
+.eqfr{display:inline-flex;flex-direction:column;align-items:stretch;vertical-align:middle;
+  margin:0 .16em;font-size:.78em;line-height:1.1}
+.eqnum{padding:0 .3em .06em;text-align:center;border-bottom:1.6px solid currentColor;min-width:1.1em}
+.eqden{padding:.06em .3em 0;text-align:center;min-width:1.1em}
+.eqin{padding:0 .1em;min-width:.7em}
+.eqhole{display:inline-block;min-width:.85em;min-height:.95em;
+  background:var(--accent-soft);border:1px dashed var(--accent-line);border-radius:2px}
+.eqwrapc{display:inline-flex;align-items:center}
+.eqbar{color:var(--ink-2)}
+.eqpad{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:16px 0 0;max-width:380px}
+button.eqk{font:inherit;font-family:"IBM Plex Mono",monospace;font-size:18px;cursor:pointer;min-height:50px;
+  background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:var(--r);
+  display:grid;place-items:center;padding:0}
+button.eqk:hover{border-color:var(--accent);color:var(--accent)}
+button.eqk:active{background:var(--accent-soft)}
+button.eqk.fn{background:var(--paper-2);color:var(--accent);font-size:15px}
+button.eqk.nav{background:var(--paper-2);color:var(--ink-2);font-size:15px}
+button.eqk .eqfr.mini{font-size:13px;margin:0}
+.eqexpk{display:inline-block;white-space:nowrap}
+.eqexpk sup{font-size:.68em;vertical-align:super}
+button.eqk .eqfr.mini .eqnum,button.eqk .eqfr.mini .eqden{min-width:.9em;min-height:.75em}
+button.eqswap{background:none;border:0;color:var(--accent);font:inherit;font-size:12.5px;cursor:pointer;
+  text-decoration:underline;text-underline-offset:3px;padding:0}
+@media (max-width:640px){ .eqpad{max-width:100%;gap:7px} button.eqk{min-height:52px} .eqfield{font-size:21px} }
 .calcbox{max-width:290px}
 .calcread{font-family:"IBM Plex Mono",monospace;font-size:24px;text-align:right;padding:10px 12px;
   background:var(--paper);border:1px solid var(--line);border-radius:var(--r);margin-bottom:10px;
@@ -4252,9 +4289,25 @@ function renderItem(){
       I.options.map((o,i)=>'<button class="opt" data-i="'+i+'" aria-pressed="false"><span class="kx">'+(i+1)+'</span><span>'+o+'</span></button>').join('')+
       '</div><div class="seqline">Select every value that works — there may be more than one.</div>'; }
   else if(I.kind==='order'){ h='<div class="chips">'+I.chips.map(c=>'<button class="chip" data-id="'+c.id+'">'+c.html+'</button>').join('')+'</div><div class="seqline" id="seqLine">Click in order, least to greatest.</div>'; }
-  else if(I.kind==='num'||I.kind==='frac'){ h='<div class="numrow"><button class="tog" id="signBtn" type="button" aria-label="Make the answer negative">±</button>'+
-      '<input type="text" class="numin" id="numIn" inputmode="text" autocomplete="off" aria-label="Your answer" placeholder="'+(I.kind==='frac'?'a/b':'')+'">'+
-      (I.unit?'<span class="unit">'+I.unit+'</span>':'')+'</div>'+(I.kind==='frac'?'<div class="seqline">Type a fraction like <span class="mn">3/4</span>, a mixed number like <span class="mn">1 1/2</span>, or a decimal.</div>':''); }
+  else if(I.kind==='num'||I.kind==='frac'){
+    if(useEq()){
+      EQ=eqNew();
+      h='<div class="numrow"><div class="eqfield" id="eqField" tabindex="0" role="textbox" aria-label="Your answer"></div>'+
+        (I.unit?'<span class="unit">'+I.unit+'</span>':'')+'</div>'+
+        eqPadHTML(I.kind)+
+        '<input type="hidden" id="numIn">'+
+        '<div class="seqline">'+(I.kind==='frac'
+          ? 'Use the fraction key for a fraction. For a mixed number, type the whole number first, then the fraction.'
+          : 'Build your answer with the keys. The arrows move the cursor.')+
+          (mock?'':' <button class="eqswap" id="eqSwap" type="button">Use the keyboard instead</button>')+'</div>';
+    } else {
+      h='<div class="numrow"><button class="tog" id="signBtn" type="button" aria-label="Make the answer negative">±</button>'+
+        '<input type="text" class="numin" id="numIn" inputmode="text" autocomplete="off" aria-label="Your answer" placeholder="'+(I.kind==='frac'?'a/b':'')+'">'+
+        (I.unit?'<span class="unit">'+I.unit+'</span>':'')+'</div>'+
+        '<div class="seqline">'+(I.kind==='frac'?'Type a fraction like <span class="mn">3/4</span>, a mixed number like <span class="mn">1 1/2</span>, or a decimal. ':'')+
+        '<button class="eqswap" id="eqSwap" type="button">Use the test&rsquo;s equation editor</button></div>';
+    }
+  }
   else if(I.kind==='twopart'){
     h=['A','B'].map(k=>'<div class="partblk"><div class="partlab">Part '+k+'</div><div class="partq">'+I[k].q+'</div>'+
       '<div class="opts'+(shortOpts(I[k].options)?' two':'')+'" role="radiogroup">'+
@@ -4289,12 +4342,15 @@ function renderItem(){
   const sb=el('signBtn');
   if(sb)sb.onclick=()=>{ const inp=el('numIn'); if(!inp||inp.readOnly)return;
     inp.value=inp.value.trim().startsWith('-')?inp.value.trim().slice(1):'-'+inp.value.trim(); inp.focus(); };
+  if(el('eqPad')){ eqSync(); wireEq(); }
+  if(el('eqSwap'))el('eqSwap').onclick=()=>{ ST.eq=!ST.eq; save(); renderItem(); };
   wire();
   el('btnCheck').disabled=false;el('btnCheck').textContent='Check';
   el('btnHint').hidden=!cur.hint;el('btnHint').disabled=!cur.hint;el('btnSkip').hidden=false;el('btnSkip').disabled=false;
   showActions(true);
   t0=performance.now();
-  const inp=el('numIn'); if(inp)setTimeout(()=>{ if(!answered)inp.focus(); },40);
+  const inp=el('eqField')||el('numIn');
+  if(inp&&inp.type!=='hidden')setTimeout(()=>{ if(!answered)inp.focus({preventScroll:true}); },40);
   const pl=document.querySelector('.plate');
   if(pl&&pl.getBoundingClientRect().top<0)pl.scrollIntoView({block:'start',behavior:'smooth'});
 }
@@ -4377,11 +4433,201 @@ function redrawIneq(){ const g=cur.input.g;
 /* ---------- answer parsing + checking ---------- */
 function parseNum(s){ s=String(s).trim().replace(/[−–—]/g,'-').replace(/,/g,'').replace(/\s+/g,' ');
   if(!s)return null;
+  // wrappers the equation editor can produce
+  let w=s.match(/^\|(.+)\|$/);
+  if(w){ const v=parseNum(w[1]); return v?F(Math.abs(v.n),v.d):null; }
+  w=s.match(/^\((.+)\)$/);
+  if(w)return parseNum(w[1]);
+  w=s.match(/^(.+)\^(-?\d+)$/);
+  if(w){ const b=parseNum(w[1]), e=+w[2];
+    if(!b||Math.abs(e)>6)return null;
+    if(b.n===0&&e<0)return null;
+    let r=F(1,1); for(let k=0;k<Math.abs(e);k++)r=F(r.n*b.n,r.d*b.d);
+    return e<0?F(r.d,r.n):r; }
   let m=s.match(/^(-?\d+)\s+(\d+)\/(\d+)$/); if(m){const w=+m[1],n=+m[2],d=+m[3];if(!d)return null;return F((Math.abs(w)*d+n)*(w<0?-1:1),d);}
   m=s.match(/^(-?\d+)\/(-?\d+)$/); if(m){if(!+m[2])return null;return F(+m[1],+m[2]);}
   m=s.match(/^-?\d*\.?\d+$/); if(m){const v=parseFloat(s); if(!isFinite(v))return null;
     const dec=(s.split('.')[1]||'').length; return F(Math.round(v*Math.pow(10,dec)),Math.pow(10,dec));}
   return null;
+}
+/* ============================================================
+   EQUATION EDITOR
+   The real FAST numeric response is not a text box. It is a button palette
+   where the fraction key opens a numerator and a denominator, with
+   Move Left / Move Right / Undo to get around (Cambium TA guide, Equation
+   Editor Tools). This reproduces that, and keeps a hidden #numIn in sync
+   so every existing grading path works unchanged.
+   ============================================================ */
+const EQF={frac:['n','d'],abs:['b'],paren:['b'],exp:['b','e']};
+let EQ=null;
+function eqNew(){ return {tree:[],cur:{p:[],i:0},undo:[]}; }
+function eqPathEq(a,b){ return a.length===b.length&&a.every((s,i)=>s.i===b[i].i&&s.f===b[i].f); }
+function eqListAt(path){ let L=EQ.tree; path.forEach(st=>{ L=L[st.i][st.f]; }); return L; }
+function eqSnap(){ EQ.undo.push(JSON.stringify({t:EQ.tree,c:EQ.cur})); if(EQ.undo.length>40)EQ.undo.shift(); }
+function eqUndo(){ const s=EQ.undo.pop(); if(!s)return; const o=JSON.parse(s); EQ.tree=o.t; EQ.cur=o.c; eqSync(); }
+function eqInsert(node){
+  eqSnap();
+  const L=eqListAt(EQ.cur.p);
+  L.splice(EQ.cur.i,0,node);
+  if(EQF[node.t]){ EQ.cur.p=EQ.cur.p.concat([{i:EQ.cur.i,f:EQF[node.t][0]}]); EQ.cur.i=0; }
+  else EQ.cur.i++;
+  eqSync();
+}
+function eqRight(){
+  const L=eqListAt(EQ.cur.p);
+  if(EQ.cur.i<L.length){
+    const n=L[EQ.cur.i];
+    if(EQF[n.t]){ EQ.cur.p=EQ.cur.p.concat([{i:EQ.cur.i,f:EQF[n.t][0]}]); EQ.cur.i=0; }
+    else EQ.cur.i++;
+    return eqSync();
+  }
+  if(!EQ.cur.p.length)return;
+  const st=EQ.cur.p[EQ.cur.p.length-1], par=eqListAt(EQ.cur.p.slice(0,-1)), node=par[st.i];
+  const fs=EQF[node.t], k=fs.indexOf(st.f);
+  if(k<fs.length-1){ EQ.cur.p=EQ.cur.p.slice(0,-1).concat([{i:st.i,f:fs[k+1]}]); EQ.cur.i=0; }
+  else { EQ.cur.p=EQ.cur.p.slice(0,-1); EQ.cur.i=st.i+1; }
+  eqSync();
+}
+function eqLeft(){
+  if(EQ.cur.i>0){
+    const L=eqListAt(EQ.cur.p), n=L[EQ.cur.i-1];
+    if(EQF[n.t]){ const f=EQF[n.t][EQF[n.t].length-1];
+      EQ.cur.p=EQ.cur.p.concat([{i:EQ.cur.i-1,f}]); EQ.cur.i=eqListAt(EQ.cur.p).length; }
+    else EQ.cur.i--;
+    return eqSync();
+  }
+  if(!EQ.cur.p.length)return;
+  const st=EQ.cur.p[EQ.cur.p.length-1], par=eqListAt(EQ.cur.p.slice(0,-1)), node=par[st.i];
+  const fs=EQF[node.t], k=fs.indexOf(st.f);
+  if(k>0){ EQ.cur.p=EQ.cur.p.slice(0,-1).concat([{i:st.i,f:fs[k-1]}]); EQ.cur.i=eqListAt(EQ.cur.p).length; }
+  else { EQ.cur.p=EQ.cur.p.slice(0,-1); EQ.cur.i=st.i; }
+  eqSync();
+}
+function eqBack(){
+  eqSnap();
+  if(EQ.cur.i>0){ eqListAt(EQ.cur.p).splice(EQ.cur.i-1,1); EQ.cur.i--; return eqSync(); }
+  if(!EQ.cur.p.length){ EQ.undo.pop(); return; }
+  const st=EQ.cur.p[EQ.cur.p.length-1], par=eqListAt(EQ.cur.p.slice(0,-1)), node=par[st.i];
+  const empty=EQF[node.t].every(f=>node[f].length===0);
+  EQ.cur.p=EQ.cur.p.slice(0,-1); EQ.cur.i=st.i;
+  if(empty)par.splice(st.i,1);                    // an empty structure you back out of goes away
+  eqSync();
+}
+function eqSign(){
+  eqSnap();
+  const L=EQ.tree;
+  if(L.length&&L[0].t==='ch'&&L[0].v==='-'){ L.shift(); if(!EQ.cur.p.length)EQ.cur.i=Math.max(0,EQ.cur.i-1); }
+  else { L.unshift({t:'ch',v:'-'}); if(!EQ.cur.p.length)EQ.cur.i++; }
+  eqSync();
+}
+/* typing "3" then "/" should turn the 3 into a numerator, the way a person expects */
+function eqSlash(){
+  const L=eqListAt(EQ.cur.p);
+  let j=EQ.cur.i;
+  while(j>0&&L[j-1].t==='ch'&&/[0-9.]/.test(L[j-1].v))j--;
+  if(j<EQ.cur.i){
+    eqSnap();
+    const taken=L.splice(j,EQ.cur.i-j);
+    const node={t:'frac',n:taken,d:[]};
+    L.splice(j,0,node);
+    EQ.cur.p=EQ.cur.p.concat([{i:j,f:'d'}]); EQ.cur.i=0;
+    return eqSync();
+  }
+  eqInsert({t:'frac',n:[],d:[]});
+}
+function eqFlat(L){
+  let s='';
+  (L||[]).forEach(n=>{
+    if(n.t==='ch')s+=n.v;
+    else if(n.t==='frac'){ if(/[0-9.)|]$/.test(s))s+=' '; s+=eqFlat(n.n)+'/'+eqFlat(n.d); }
+    else if(n.t==='abs')s+='|'+eqFlat(n.b)+'|';
+    else if(n.t==='paren')s+='('+eqFlat(n.b)+')';
+    else if(n.t==='exp')s+=eqFlat(n.b)+'^'+eqFlat(n.e);
+  });
+  return s;
+}
+function eqBox(list,path,cls){
+  const inner=eqRender(list,path);
+  return '<span class="'+cls+(list.length?'':' eqhole')+'">'+inner+'</span>';
+}
+function eqRender(list,path){
+  const here=eqPathEq(path,EQ.cur.p);
+  let out='';
+  for(let i=0;i<=list.length;i++){
+    if(here&&EQ.cur.i===i)out+='<span class="eqcar"></span>';
+    if(i===list.length)break;
+    const n=list[i], sub=f=>path.concat([{i,f}]);
+    if(n.t==='ch')out+='<span class="eqch">'+(n.v==='-'?'&minus;':n.v)+'</span>';
+    else if(n.t==='frac')out+='<span class="eqfr">'+eqBox(n.n,sub('n'),'eqnum')+eqBox(n.d,sub('d'),'eqden')+'</span>';
+    else if(n.t==='abs')out+='<span class="eqwrapc"><span class="eqbar">|</span>'+eqBox(n.b,sub('b'),'eqin')+'<span class="eqbar">|</span></span>';
+    else if(n.t==='paren')out+='<span class="eqwrapc"><span class="eqbar">(</span>'+eqBox(n.b,sub('b'),'eqin')+'<span class="eqbar">)</span></span>';
+    else if(n.t==='exp')out+='<span class="eqwrapc">'+eqBox(n.b,sub('b'),'eqin')+'<sup>'+eqBox(n.e,sub('e'),'eqin')+'</sup></span>';
+  }
+  return out;
+}
+function eqSync(){
+  const f=el('eqField'); if(f)f.innerHTML=eqRender(EQ.tree,[])||'<span class="eqcar"></span>';
+  const inp=el('numIn'); if(inp)inp.value=eqFlat(EQ.tree);
+}
+/* rebuild the tree from a canonical string, so a saved answer comes back as an answer */
+function eqFromString(str){
+  EQ=eqNew();
+  const t=String(str||'').trim(); if(!t)return;
+  let m=t.match(/^(-?\d+)\s+(\d+)\/(\d+)$/);
+  if(m){ if(m[1].charAt(0)==='-')EQ.tree.push({t:'ch',v:'-'});
+    String(Math.abs(+m[1])).split('').forEach(c=>EQ.tree.push({t:'ch',v:c}));
+    EQ.tree.push({t:'frac',n:m[2].split('').map(c=>({t:'ch',v:c})),d:m[3].split('').map(c=>({t:'ch',v:c}))});
+    EQ.cur={p:[],i:EQ.tree.length}; return; }
+  m=t.match(/^(-?)(\d+)\/(\d+)$/);
+  if(m){ if(m[1])EQ.tree.push({t:'ch',v:'-'});
+    EQ.tree.push({t:'frac',n:m[2].split('').map(c=>({t:'ch',v:c})),d:m[3].split('').map(c=>({t:'ch',v:c}))});
+    EQ.cur={p:[],i:EQ.tree.length}; return; }
+  t.split('').forEach(c=>EQ.tree.push({t:'ch',v:c}));
+  EQ.cur={p:[],i:EQ.tree.length};
+}
+function eqActive(){ return !!el('eqPad'); }
+function useEq(){ return (mock&&!mock.reading&&mock.phase==='test')?true:!!ST.eq; }
+function eqPadHTML(kind){
+  const K=(k,lab,cls)=>'<button type="button" class="eqk'+(cls?' '+cls:'')+'" data-k="'+k+'">'+lab+'</button>';
+  return '<div class="eqpad" id="eqPad">'+
+    K('7','7')+K('8','8')+K('9','9')+K('frac','<span class="eqfr mini"><span class="eqnum eqhole"></span><span class="eqden eqhole"></span></span>','fn')+K('left','&#9668;','nav')+
+    K('4','4')+K('5','5')+K('6','6')+K('abs','|&thinsp;|','fn')+K('right','&#9658;','nav')+
+    K('1','1')+K('2','2')+K('3','3')+K('paren','( )','fn')+K('back','&#9003;','nav')+
+    K('0','0')+K('.','.')+K('sign','&plusmn;')+K('exp','<span class="eqexpk">x<sup>n</sup></span>','fn')+K('undo','&#8634;','nav')+
+    '</div>';
+}
+function wireEq(){
+  const pad=el('eqPad'); if(!pad)return;
+  pad.querySelectorAll('.eqk').forEach(b=>b.onclick=e=>{
+    e.preventDefault();
+    if(answered)return;
+    const k=b.dataset.k;
+    if(/^[0-9.]$/.test(k))eqInsert({t:'ch',v:k});
+    else if(k==='frac')eqInsert({t:'frac',n:[],d:[]});
+    else if(k==='abs')eqInsert({t:'abs',b:[]});
+    else if(k==='paren')eqInsert({t:'paren',b:[]});
+    else if(k==='exp')eqInsert({t:'exp',b:[],e:[]});
+    else if(k==='sign')eqSign();
+    else if(k==='left')eqLeft();
+    else if(k==='right')eqRight();
+    else if(k==='back')eqBack();
+    else if(k==='undo')eqUndo();
+    const f=el('eqField'); if(f)f.focus({preventScroll:true});
+  });
+  const f=el('eqField');
+  /* Clicking the field drops the cursor at the end of the whole expression.
+     Without this, a caret parked at the far left makes Backspace look broken. */
+  if(f)f.onclick=()=>{ if(answered)return; EQ.cur={p:[],i:EQ.tree.length}; eqSync(); f.focus({preventScroll:true}); };
+  if(f)f.onkeydown=e=>{
+    if(answered||e.ctrlKey||e.metaKey||e.altKey)return;
+    const k=e.key;
+    if(/^[0-9]$/.test(k)||k==='.'){ e.preventDefault(); eqInsert({t:'ch',v:k}); }
+    else if(k==='/'){ e.preventDefault(); eqSlash(); }
+    else if(k==='-'){ e.preventDefault(); eqSign(); }
+    else if(k==='Backspace'){ e.preventDefault(); eqBack(); }
+    else if(k==='ArrowLeft'){ e.preventDefault(); eqLeft(); }
+    else if(k==='ArrowRight'){ e.preventDefault(); eqRight(); }
+  };
 }
 function isCorrect(){ const I=cur.input;
   if(I.kind==='twopart')return twoPick.A===I.A.correct&&twoPick.B===I.B.correct;
@@ -4497,6 +4743,7 @@ function check(){
       b.setAttribute('aria-pressed',on); });
     const sl=el('seqLine'); if(sl)sl.innerHTML='The correct graph is shown above.'; }
   if(el('numIn')){ el('numIn').classList.add(ok?'right':'wrong'); el('numIn').readOnly=true; }
+  if(el('eqField'))el('eqField').classList.add(ok?'right':'wrong');
 
   let trap='';
   if(!ok&&(I.kind==='num'||I.kind==='frac')&&I.traps){
@@ -5013,7 +5260,10 @@ function restoreResp(){
   else if(I.kind==='order'){ orderPick=r.v.slice();
     el('answer').querySelectorAll('.chip').forEach(c=>{ const k=orderPick.indexOf(+c.dataset.id);
       if(k>=0){ c.classList.add('picked'); c.insertAdjacentHTML('beforeend','<span class="ord">'+(k+1)+'</span>'); } }); }
-  else if(I.kind==='num'||I.kind==='frac'){ if(el('numIn'))el('numIn').value=r.v; }
+  else if(I.kind==='num'||I.kind==='frac'){
+    if(el('numIn'))el('numIn').value=r.v;
+    if(el('eqPad')){ eqFromString(r.v); eqSync(); }
+  }
   else if(I.kind==='plot'){ plotPick=r.v; redrawLine(); }
   else if(I.kind==='point'){ pointPick=r.v?{x:r.v.x,y:r.v.y}:null; redrawGrid(); }
   else if(I.kind==='ineq'){ ineqPick={k:r.v.k,closed:r.v.closed,dir:r.v.dir}; redrawIneq();
@@ -5756,7 +6006,7 @@ el('btnReset').onclick=()=>{ if(!confirm('Erase all progress on every benchmark?
   ST={b:{},session:{right:0,tried:0,streak:0,best:0}}; save(); activePassage=null; renderNav(); nextItem(); };
 document.addEventListener('keydown',e=>{
   if(e.ctrlKey||e.metaKey||e.altKey)return;                       // never steal browser shortcuts
-  if(e.target.tagName==='INPUT'){ if(e.key==='Enter'){e.preventDefault();check();} return; }
+  if(e.target.tagName==='INPUT'||e.target.id==='eqField'){ if(e.key==='Enter'){e.preventDefault();check();} return; }
   if(e.target.closest&&e.target.closest('button,a,[tabindex]')){   // let a focused control act on itself
     if(e.key==='Enter')return;
   }
