@@ -424,6 +424,15 @@ table.matrix .mcell{text-align:center;vertical-align:middle}
 .partq{font-size:16px;line-height:1.55;max-width:62ch;margin-bottom:4px}
 .opt.cmpbtn{justify-content:center;font-size:24px;gap:8px}
 .opt.sel,.opt[aria-checked="true"]{border-color:var(--accent);background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+.planwhen{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 16px;padding:12px 14px;
+  background:var(--paper-2);border:1px solid var(--line);border-radius:var(--r)}
+.planwhen label{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--ink-3)}
+.planwhen input{font:inherit;font-size:14px;padding:7px 10px;background:var(--paper);color:var(--ink);
+  border:1px solid var(--line);border-radius:var(--r)}
+.planleft{font-size:14px;color:var(--ink-2)}
+.planleft.urgent{color:var(--bad)}
+.daycard.next{border-top-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent-line)}
 .daygrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px;margin-top:20px}
 .daycard{appearance:none;cursor:pointer;text-align:left;font:inherit;color:var(--ink);background:var(--paper);
   border:1px solid var(--line);border-top:3px solid var(--accent-line);border-radius:var(--r);
@@ -5715,6 +5724,21 @@ const PLAN_DAYS=[
   kind:'mock',then:null,target:0,bms:[]}
 ];
 function planState(){ ST.plan=ST.plan||{done:[false,false,false,false,false]}; return ST.plan; }
+function daysToTest(){
+  if(!ST.testDate)return null;
+  const t=new Date(ST.testDate+'T08:00:00'), now=new Date();
+  return Math.ceil((t-now)/864e5);
+}
+/* which day to do next: the first unfinished one, unless there is less time than days left */
+function suggestedDay(){
+  const ps=planState(), left=daysToTest();
+  const undone=[1,2,3,4,5].filter(d=>!ps.done[d-1]);
+  if(!undone.length)return 5;
+  if(left===null)return undone[0];
+  if(left<=1)return 5;                                  // the day before, do the mock
+  if(undone.length>left)return undone[undone.length-Math.max(1,left)];  // behind schedule: skip ahead
+  return undone[0];
+}
 function planStart(){ dayRun=null; renderPlanHub(); }
 function renderPlanHub(){
   const ps=planState(), dueList=rqDue();
@@ -5729,14 +5753,36 @@ function renderPlanHub(){
     (dueList.length?'<div class="trapnote" style="margin-top:14px"><b>Due for another look today:</b> '+dueList.map(nm).join(' &middot; ')+
       '. These will appear on their own inside today&rsquo;s block.</div>':'');
   el('figure').innerHTML=''; el('hintSlot').innerHTML=''; el('verdict').innerHTML='';
-  el('answer').innerHTML='<div class="daygrid">'+PLAN_DAYS.map(d=>
-    '<button class="daycard'+(ps.done[d.d-1]?' done':'')+'" data-d="'+d.d+'">'+
-      '<span class="dnum">Day '+d.d+(ps.done[d.d-1]?' &check;':'')+'</span>'+
+  const sug=suggestedDay(), left=daysToTest();
+  el('answer').innerHTML=
+    '<div class="planwhen"><label for="testWhen">When is the test?</label>'+
+      '<input type="date" id="testWhen" value="'+(ST.testDate||'')+'">'+
+      (left===null?'<span class="planleft">Set the date and this plan will pace itself.</span>'
+       :left<0?'<span class="planleft">That date has passed. Change it, or keep using these decks for PM2.</span>'
+       :'<span class="planleft'+(left<=2?' urgent':'')+'">'+(left===0?'The test is <strong>today</strong>.'
+          :left===1?'<strong>Tomorrow.</strong> Do Day 5, the full mock.'
+          :'<strong>'+left+' days</strong> to go'+(5-ps.done.filter(Boolean).length>left?' &mdash; more days of plan than days left, so the cards below are reordered.':'.'))+'</span>')+
+    '</div>'+
+    '<div class="daygrid">'+PLAN_DAYS.map(d=>
+    '<button class="daycard'+(ps.done[d.d-1]?' done':'')+(d.d===sug&&!ps.done[d.d-1]?' next':'')+'" data-d="'+d.d+'">'+
+      '<span class="dnum">Day '+d.d+(ps.done[d.d-1]?' &check;':(d.d===sug?' &mdash; do this one':''))+'</span>'+
       '<span class="dname">'+d.name+'</span>'+
       '<span class="dblurb">'+d.blurb+'</span>'+
       '<span class="dbms">'+(d.bms.length?d.bms.join(' &middot; '):'36 items &middot; 90 minutes')+'</span>'+
     '</button>').join('')+'</div>';
   el('btnCheck').disabled=true; el('btnHint').disabled=true; el('btnSkip').disabled=true; el('kbdHint').innerHTML='';
+  // what his own finished papers say he keeps missing
+  const rep2=repeatMisses().filter(x=>/^ELA/.test(x.code)).slice(0,6);
+  if(rep2.length){
+    const d=document.createElement('div'); d.className='trapnote'; d.style.marginTop='16px';
+    d.innerHTML='<b>Your own papers say these keep coming back.</b> '+
+      rep2.map(x=>(ELA_NAMES[x.code]||x.short)+' ('+x.n+'&times;)').join(' &middot; ')+
+      '<div class="builder" style="margin-top:10px"><button class="btn" id="planDrill">Practise these '+rep2.length+' now</button></div>';
+    el('answer').appendChild(d);
+    el('planDrill').onclick=()=>startMissDrill(rep2.map(x=>x.code),'Missed on more than one paper');
+  }
+  const w=el('testWhen');
+  if(w)w.onchange=()=>{ ST.testDate=w.value||''; save(); renderPlanHub(); };
   el('answer').querySelectorAll('.daycard').forEach(b=>b.onclick=()=>startDay(+b.dataset.d));
   renderLedger();
 }
@@ -5911,6 +5957,13 @@ function planSecondStart(){
     PASSAGES.forEach(pg=>pg.items.forEach((it,i)=>{ if(it.bm===bm&&!usedIdx.has(pg.id+':'+i))pool.push({p:pg,i,bm}); }));
     if(pool.length)plan.second.push(PK(pool));
     else { const b=ALLB['ELA.6.V.1.3']; if(b)plan.second.push({gen:b,bm}); }
+  });
+  // anything two or more papers have flagged belongs in this block too
+  repeatMisses().filter(x=>/^ELA/.test(x.code)&&x.n>=2&&missedBms.indexOf(x.code)<0).slice(0,3).forEach(x=>{
+    if(x.code.indexOf('ELA.6.V')===0){ const b=ALLB[x.code]; if(b)plan.second.push({gen:b,bm:x.code}); return; }
+    const pool=[];
+    PASSAGES.forEach(pg=>pg.items.forEach((it,i)=>{ if(it.bm===x.code&&!usedIdx.has(pg.id+':'+i))pool.push({p:pg,i,bm:x.code}); }));
+    if(pool.length)plan.second.push(PK(pool));
   });
   while(plan.second.length<4){ const b=PK([ALLB['ELA.6.V.1.2'],ALLB['ELA.6.V.1.3']]); plan.second.push({gen:b,bm:b.code}); }
   planServeSecond();
@@ -6550,13 +6603,7 @@ function finishMock(){
       flagged:false,sec:0,visits:0,changed:0,firstOk:false,stem:'',yours:'',key:''}); }
   const right=mock.ans.filter(a=>a.ok).length, tot=mock.ans.length;
   const mins=Math.round((Date.now()-mock.start)/60000);
-  const catOf=code=>{
-    if(!mock.reading){ return {NSO:'Number Sense &amp; Operations',AR:'Algebraic Reasoning',GR:'Geometry',DP:'Data &amp; Probability'}[code.split('.')[2]]||code; }
-    const m2=code.match(/ELA\.6\.(R\.(\d)|V)/);
-    if(!m2)return 'Vocabulary';
-    if(code.indexOf('ELA.6.V')===0)return 'Across Genres &amp; Vocabulary';
-    return m2[2]==='1'?'Reading Prose and Poetry':m2[2]==='2'?'Reading Informational Text':'Across Genres &amp; Vocabulary';
-  };
+  const catOf=code=>strandOf(code,mock.reading);
   const byCat={}; mock.ans.forEach(a=>{const c=catOf(a.code);byCat[c]=byCat[c]||{r:0,t:0};byCat[c].t++;if(a.ok)byCat[c].r++;});
   const missed=mock.ans.filter(a=>!a.ok);
   ST.mocks=ST.mocks||[]; ST.mocks.push({ts:Date.now(),right,tot,mins}); if(ST.mocks.length>12)ST.mocks.shift();
@@ -6607,6 +6654,27 @@ function finishMock(){
    ============================================================ */
 function med(a){ if(!a.length)return 0; const b=a.slice().sort((x,y)=>x-y);
   return b.length%2?b[(b.length-1)/2]:(b[b.length/2-1]+b[b.length/2])/2; }
+function strandOf(code,reading){
+  if(!reading)return {NSO:'Number Sense',AR:'Algebraic Reasoning',GR:'Geometry',DP:'Data &amp; Probability'}[String(code).split('.')[2]]||code;
+  if(String(code).indexOf('ELA.6.V')===0)return 'Across Genres &amp; Vocabulary';
+  const m=String(code).match(/ELA\.6\.R\.(\d)/);
+  if(!m)return 'Across Genres &amp; Vocabulary';
+  return m[1]==='1'?'Prose &amp; Poetry':m[1]==='2'?'Informational Text':'Across Genres &amp; Vocabulary';
+}
+/* Every paper is an island until you line them up. This does the lining up. */
+function trendFor(subject){
+  const ps=(ST.papers||[]).filter(x=>x.subject===subject).slice().sort((a,b)=>a.ts-b.ts);
+  if(ps.length<2)return null;
+  const strands={};
+  ps.forEach((pp,k)=>{
+    (pp.items||[]).forEach(a=>{
+      const st=strandOf(a.code,subject==='ela');
+      strands[st]=strands[st]||ps.map(()=>({r:0,t:0}));
+      strands[st][k].t++; if(a.ok)strands[st][k].r++;
+    });
+  });
+  return {papers:ps,strands};
+}
 function paperStats(pp){
   const it=pp.items||[];
   const timed=it.filter(a=>a.sec>0).map(a=>a.sec);
@@ -6770,6 +6838,35 @@ function renderPapers(){
           '<td class="num mono'+(S.blank.length?'" style="color:var(--bad)':'')+'">'+S.blank.length+'</td>'+
           '<td><button class="tog" data-open="'+pp.id+'">Open</button></td></tr>';
       }).join('')+'</tbody></table></div>';
+    ['math','ela'].forEach(sub=>{
+      const T=trendFor(sub); if(!T)return;
+      const label=sub==='math'?'Mathematics':'Reading';
+      const pct=(c)=>c.t?Math.round(c.r/c.t*100):null;
+      const last=T.papers[T.papers.length-1], prev=T.papers[T.papers.length-2];
+      const dScore=Math.round(last.right/last.tot*100)-Math.round(prev.right/prev.tot*100);
+      const sp=x=>Math.round(x.minutes*60/(x.tot||1));
+      const dPace=sp(last)-sp(prev);
+      const arrow=v=>v>0?'<span style="color:var(--good)">&#9650; '+v+'</span>':v<0?'<span style="color:var(--bad)">&#9660; '+Math.abs(v)+'</span>':'&mdash;';
+      h+='<h4 class="planh" style="margin-top:22px">'+label+' across '+T.papers.length+' papers</h4>'+
+        '<p style="max-width:64ch;font-size:14px;color:var(--ink-2);margin:0 0 10px">Against the paper before: '+
+          'score '+arrow(dScore)+' points, seconds a question '+
+          (dPace<0?'<span style="color:var(--good)">&#9660; '+Math.abs(dPace)+'</span>':dPace>0?'<span style="color:var(--bad)">&#9650; '+dPace+'</span>':'&mdash;')+
+          '. A strand that moves is worth more than a total that moves.</p>'+
+        '<div class="tablescroll"><table class="review"><thead><tr><th>Strand</th>'+
+          T.papers.map(x=>'<th class="num">'+new Date(x.ts).toLocaleDateString(undefined,{month:'short',day:'numeric'})+'</th>').join('')+
+          '<th class="num">Change</th></tr></thead><tbody>'+
+        Object.keys(T.strands).map(st=>{
+          const row=T.strands[st], first=pct(row[0]), lastv=pct(row[row.length-1]);
+          const d=(first===null||lastv===null)?null:lastv-first;
+          return '<tr><td><strong>'+st+'</strong></td>'+
+            row.map(c=>'<td class="num mono">'+(pct(c)===null?'&mdash;':pct(c)+'%')+'</td>').join('')+
+            '<td class="num mono">'+(d===null?'&mdash;':arrow(d))+'</td></tr>';
+        }).join('')+
+        '<tr><td><strong>Whole paper</strong></td>'+
+          T.papers.map(x=>'<td class="num mono">'+Math.round(x.right/x.tot*100)+'%</td>').join('')+
+          '<td class="num mono">'+arrow(Math.round(last.right/last.tot*100)-Math.round(T.papers[0].right/T.papers[0].tot*100))+'</td></tr>'+
+        '</tbody></table></div>';
+    });
     if(rep.length){
       h+='<div class="trapnote" style="margin-top:16px"><b>Missed on more than one paper.</b> '+
         rep.map(x=>x.short+' ('+x.n+'×)').join(' &middot; ')+
